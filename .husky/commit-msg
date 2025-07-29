@@ -1,0 +1,8 @@
+if ! npx --no -- commitlint --edit "$1"; then
+  echo ""
+  echo "❌ Invalid commit message!"
+  echo "💡 Tip: Use Commitizen to help you write a proper commit message:"
+  echo "   👉 Run: npx cz"
+  echo ""
+  exit 1
+fi
