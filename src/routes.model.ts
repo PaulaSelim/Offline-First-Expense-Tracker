@@ -1,4 +1,5 @@
 export enum ROUTE_PATHS {
-  login = '/login',
-  register = '/register',
+  LOGIN = 'login',
+  REGISTER = 'register',
+  ROOT = '',
 }
