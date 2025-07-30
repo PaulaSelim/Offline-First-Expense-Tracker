@@ -10,13 +10,13 @@
       <app-login-form
         [form]="form"
         [isInvalid]="isInvalid.bind(this)"
-        (submitForm)="handleSubmit()"
+        (submitForm)="onSubmit()"
       />
 
       <div class="text-center">
         <p class="mb-0 text-muted">
           Don't have an account?
-          <a routerLink="/register" class="text-decoration-none">
+          <a [routerLink]="ROUTER_LINKS.REGISTER" class="text-decoration-none">
             <i class="bi bi-person-plus me-1"></i>
             Register here
           </a>

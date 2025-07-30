@@ -9,7 +9,7 @@ import {
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { LoginForm } from './login-form/login-form';
-
+import { ROUTER_LINKS } from '../../../routes.model';
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -19,6 +19,7 @@ import { LoginForm } from './login-form/login-form';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Login {
+  readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   readonly form: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [
@@ -33,7 +34,7 @@ export class Login {
     return !!control && control.invalid && (control.dirty || control.touched);
   }
 
-  handleSubmit(): void {
+  onSubmit(): void {
     if (this.form.valid) {
       this.form.reset();
     }
