@@ -14,7 +14,8 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { CardLayout } from '../../layouts/card-layout/card-layout';
+import { RegexPatterns } from '../../core/validators/regex.make';
+import { CardShared } from '../../shared/card-shared/card-shared';
 import { RegisterForm } from './register-form/register-form';
 
 @Component({
@@ -25,7 +26,7 @@ import { RegisterForm } from './register-form/register-form';
     ReactiveFormsModule,
     RouterLink,
     RegisterForm,
-    CardLayout,
+    CardShared,
   ],
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
@@ -38,18 +39,18 @@ export class Register {
       Validators.required,
       Validators.minLength(3),
       Validators.maxLength(20),
-      Validators.pattern('^[a-zA-Z0-9_]+$'),
+      Validators.pattern(RegexPatterns.Username),
     ]),
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [
       Validators.required,
       Validators.minLength(5),
-      Validators.pattern('^(?=.*[A-Z])(?=.*[a-z])(?=.*\\d).+$'),
+      Validators.pattern(RegexPatterns.Password),
     ]),
     confirmPassword: new FormControl('', [Validators.required]),
   });
 
-  protected onSubmit(): void {
+  onSubmit(): void {
     this.form.value.username = this.form.value.username.trim();
     this.form.value.email = this.form.value.email.trim();
     if (this.form.valid && !this.isPasswordMismatch()) {
