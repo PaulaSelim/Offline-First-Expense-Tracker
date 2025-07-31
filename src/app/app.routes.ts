@@ -14,11 +14,11 @@ export const routes: Routes = [
         (m: typeof import('./pages/login/login')) => m.Login,
       ),
   },
-  // {
-  // path: ROUTE_PATHS.REGISTER,
-  // loadComponent: () =>
-  //   import('./pages/register/register').then(
-  //     (m: typeof import('./pages/register/register')) => m.Register,
-  //   ),
-  // },
+  {
+    path: ROUTE_PATHS.REGISTER,
+    loadComponent: () =>
+      import('./pages/register/register').then(
+        (m: typeof import('./pages/register/register')) => m.Register,
+      ),
+  },
 ];
