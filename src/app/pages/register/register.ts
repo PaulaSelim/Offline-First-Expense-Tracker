@@ -17,6 +17,8 @@ import { Router, RouterLink } from '@angular/router';
 import { RegexPatterns } from '../../core/validators/regex.make';
 import { CardShared } from '../../shared/card-shared/card-shared';
 import { RegisterForm } from './register-form/register-form';
+import { AuthFacade } from '../../service/auth/auth.facade';
+import { RegisterRequest } from '../../core/api/authApi/authApi.model';
 
 @Component({
   selector: 'app-register',
@@ -34,6 +36,7 @@ import { RegisterForm } from './register-form/register-form';
 })
 export class Register {
   private router: Router = inject(Router);
+  readonly authFacade: AuthFacade = inject(AuthFacade);
   form: FormGroup = new FormGroup({
     username: new FormControl('', [
       Validators.required,
@@ -54,6 +57,8 @@ export class Register {
     this.form.value.username = this.form.value.username.trim();
     this.form.value.email = this.form.value.email.trim();
     if (this.form.valid && !this.isPasswordMismatch()) {
+      const { username, email, password }: RegisterRequest = this.form.value;
+      this.authFacade.register({ username, email, password });
       this.form.reset();
       this.router.navigate(['/login']);
     }
