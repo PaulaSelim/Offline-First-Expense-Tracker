@@ -17,7 +17,7 @@ import {
   resetAuthState,
 } from '../../core/state-management/auth.state';
 import { ToastrService } from 'ngx-toastr';
-import { TokenState } from '../../core/state-management/token.state';
+import { TokenState } from '../../core/services/token.state';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);

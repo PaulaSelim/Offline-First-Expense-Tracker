@@ -49,14 +49,6 @@ export class TokenState {
     return localStorage.getItem(key);
   }
 
-  getAccessTokenSignal(): typeof this.accessToken {
-    return this.accessToken;
-  }
-
-  getRefreshTokenSignal(): typeof this.refreshToken {
-    return this.refreshToken;
-  }
-
   getAccessToken(): string | null {
     return this._accessToken();
   }

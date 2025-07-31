@@ -1,5 +1,5 @@
-import { signal, WritableSignal, Signal } from '@angular/core';
-import { AuthenticationResponse } from '../api/authApi/authApi.model';
+import { signal, WritableSignal, Signal, computed } from '@angular/core';
+import { AuthenticationResponse, User } from '../api/authApi/authApi.model';
 
 const _authData: WritableSignal<AuthenticationResponse | null> = signal(null);
 const _authLoading: WritableSignal<boolean> = signal(false);
@@ -25,6 +25,10 @@ export const setAuthError: (value: string | null) => void = (
 ) => {
   _authError.set(value);
 };
+
+export const user: Signal<User | null> = computed(
+  () => authData()?.data.user ?? null,
+);
 
 export const resetAuthState: () => void = () => {
   _authData.set(null);
