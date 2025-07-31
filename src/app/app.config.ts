@@ -6,11 +6,21 @@ import {
 import { provideRouter } from '@angular/router';
 
 import { routes } from './app.routes';
-
+import { AuthInterceptor } from './core/interceptors/auth.interceptor';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideToastr } from 'ngx-toastr';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
     provideZonelessChangeDetection(),
     provideRouter(routes),
+    provideToastr({
+      timeOut: 3000,
+      positionClass: 'toast-bottom-right',
+      preventDuplicates: true,
+      closeButton: true,
+      progressBar: true,
+    }),
+    provideHttpClient(withInterceptors([AuthInterceptor])),
   ],
 };
