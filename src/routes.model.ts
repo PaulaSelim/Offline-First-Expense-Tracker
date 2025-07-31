@@ -1,4 +1,11 @@
 export enum ROUTE_PATHS {
-  login = '/login',
-  register = '/register',
+  LOGIN = 'login',
+  REGISTER = 'register',
+  ROOT = '',
+}
+
+export enum ROUTER_LINKS {
+  LOGIN = `/${ROUTE_PATHS.LOGIN}`,
+  REGISTER = `/${ROUTE_PATHS.REGISTER}`,
+  ROOT = `/${ROUTE_PATHS.ROOT}`,
 }
