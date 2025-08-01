@@ -1,38 +1,48 @@
-import { inject, Injectable, computed, Signal } from '@angular/core';
-import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { computed, inject, Injectable, Signal } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
 import {
+  AuthenticationResponse,
+  AuthenticationTokens,
   LoginRequest,
   RegisterRequest,
-  AuthenticationResponse,
   User,
-  AuthenticationTokens,
 } from '../../core/api/authApi/authApi.model';
+import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { TokenState } from '../../core/services/token.state';
 import {
   authData,
-  authLoading,
   authError,
-  setAuthLoading,
-  setAuthError,
-  setAuthData,
+  authLoading,
   resetAuthState,
+  setAuthData,
+  setAuthError,
+  setAuthLoading,
 } from '../../core/state-management/auth.state';
-import { ToastrService } from 'ngx-toastr';
-import { TokenState } from '../../core/services/token.state';
+import { UserState } from '../../core/state-management/RxDB/user/user.state';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly tokenState: TokenState = inject(TokenState);
+  private readonly userState: UserState = inject(UserState);
   login(data: LoginRequest): void {
     setAuthLoading(true);
     setAuthError(null);
 
     this.api.login(data).subscribe({
-      next: (res: AuthenticationResponse) => {
+      next: async (res: AuthenticationResponse) => {
         setAuthData(res);
         this.tokenState.setTokens(res.data.token, res.data.refresh_token);
+
+        // Store user and tokens in RxDB
+        await this.userState.storeUserWithTokens(res.data.user, {
+          token: res.data.token,
+          refresh_token: res.data.refresh_token,
+        });
+
         this.toast.success('Login successful!');
       },
+
       error: () => {
         setAuthError('Invalid username or password');
         this.toast.error('Login failed. Please try again.');
@@ -48,9 +58,16 @@ export class AuthFacade {
     setAuthError(null);
 
     this.api.register(data).subscribe({
-      next: (res: AuthenticationResponse) => {
+      next: async (res: AuthenticationResponse) => {
         setAuthData(res);
         this.tokenState.setTokens(res.data.token, res.data.refresh_token);
+
+        // Store user and tokens in RxDB
+        await this.userState.storeUserWithTokens(res.data.user, {
+          token: res.data.token,
+          refresh_token: res.data.refresh_token,
+        });
+
         this.toast.success('Registration successful!');
       },
       error: () => {
