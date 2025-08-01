@@ -8,12 +8,12 @@ import {
   Validators,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { LoginForm } from './login-form/login-form';
 import { ROUTER_LINKS } from '../../../routes.model';
-import { RegexPatterns } from '../../core/validators/regex.make';
 import { LoginRequest } from '../../core/api/authApi/authApi.model';
-import { CardShared } from '../../shared/card-shared/card-shared';
+import { RegexPatterns } from '../../core/validators/regex.make';
 import { AuthFacade } from '../../service/auth/auth.facade';
+import { CardShared } from '../../shared/card-shared/card-shared';
+import { LoginForm } from './login-form/login-form';
 @Component({
   selector: 'app-login',
   standalone: true,
@@ -52,6 +52,7 @@ export class Login {
         email: email ?? '',
         password: password ?? '',
       });
+      this.form.reset();
     }
   }
 }
