@@ -1,4 +1,4 @@
-import { signal, WritableSignal, Signal, computed } from '@angular/core';
+import { computed, signal, Signal, WritableSignal } from '@angular/core';
 import { AuthenticationResponse, User } from '../api/authApi/authApi.model';
 
 const _authData: WritableSignal<AuthenticationResponse | null> = signal(null);
@@ -35,3 +35,13 @@ export const resetAuthState: () => void = () => {
   _authLoading.set(false);
   _authError.set(null);
 };
+
+export const userName: Signal<string> = computed(() => user()?.username ?? '');
+export const userEmail: Signal<string> = computed(() => user()?.email ?? '');
+export const userId: Signal<string> = computed(() => user()?.id ?? '');
+export const userCreatedAt: Signal<string | undefined> = computed(
+  () => user()?.created_at,
+);
+export const userUpdatedAt: Signal<string | undefined> = computed(
+  () => user()?.updated_at,
+);

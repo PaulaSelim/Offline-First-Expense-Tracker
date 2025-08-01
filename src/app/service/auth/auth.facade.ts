@@ -18,6 +18,8 @@ import {
   setAuthData,
   setAuthError,
   setAuthLoading,
+  userEmail,
+  userName,
 } from '../../core/state-management/auth.state';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
@@ -75,11 +77,17 @@ export class AuthFacade {
   }
 
   getCurrentUsername(): Signal<string> {
-    return computed(() => authData()?.data.user?.username ?? '');
+    return userName;
   }
+
+  getCurrentUserEmail(): Signal<string> {
+    return userEmail;
+  }
+
   getError(): typeof authError {
     return authError;
   }
+
   setError(message: string): void {
     setAuthError(message);
   }
@@ -114,5 +122,32 @@ export class AuthFacade {
     const refresh_token: string | null = this.tokenState.getRefreshToken();
     this.refreshToken(refresh_token!);
     return this.tokenState.getAccessToken();
+  }
+  getProfile(): void {
+    this.api.getProfile().subscribe({
+      next: (user: User) => {
+        const current: AuthenticationResponse | null = authData();
+        if (current) {
+          setAuthData({
+            ...current,
+            data: {
+              ...current.data,
+              user,
+            },
+          });
+        } else {
+          setAuthData({
+            data: {
+              user,
+              token: '',
+              refresh_token: '',
+            },
+          });
+        }
+      },
+      error: () => {
+        this.setError('Failed to fetch user profile.');
+      },
+    });
   }
 }
