@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
-import { ROUTE_PATHS } from '../routes.model';
+import { ROUTE_PATHS, ROUTER_LINKS } from '../routes.model';
+import { authGuard } from './core/guards/auth-guard/auth-guard';
 import { GroupCreate } from './pages/group-create/group-create';
 import { GroupDetail } from './pages/group-detail/group-detail';
 import { GroupEdit } from './pages/group-edit/group-edit';
-import { Dashboard } from './pages/dashboard/dashboard';
 
 export const routes: Routes = [
   {
     path: ROUTE_PATHS.ROOT,
-    redirectTo: ROUTE_PATHS.LOGIN,
+    redirectTo: ROUTER_LINKS.DASHBOARD,
     pathMatch: 'full',
   },
   {
@@ -27,22 +27,25 @@ export const routes: Routes = [
   },
 
   {
-    path: 'dashboard',
-    component: Dashboard,
-    title: 'Dashboard',
+    path: ROUTE_PATHS.DASHBOARD,
+    loadComponent: () =>
+      import('./pages/dashboard/dashboard').then(
+        (m: typeof import('./pages/dashboard/dashboard')) => m.Dashboard,
+      ),
+    canActivate: [authGuard],
   },
   {
-    path: 'groups/create',
+    path: ROUTE_PATHS.GROUPS,
     component: GroupCreate,
     title: 'Create Group',
   },
   {
-    path: 'groups/:id',
+    path: ROUTE_PATHS.GROUP_DETAIL,
     component: GroupDetail,
     title: 'Group Details',
   },
   {
-    path: 'groups/:id/edit',
+    path: ROUTE_PATHS.GROUP_EDIT,
     component: GroupEdit,
     title: 'Edit Group',
   },
