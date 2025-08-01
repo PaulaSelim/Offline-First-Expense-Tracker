@@ -4,8 +4,6 @@ import { of, throwError } from 'rxjs';
 
 import { AuthApiService } from '../../core/api/authApi/authApi.service';
 import { ToastrService } from 'ngx-toastr';
-import { TokenState } from '../../core/state-management/token.state';
-
 import {
   LoginRequest,
   RegisterRequest,
@@ -13,6 +11,7 @@ import {
   AuthenticationTokens,
 } from '../../core/api/authApi/authApi.model';
 import { AuthFacade } from './auth.facade';
+import { TokenState } from '../../core/services/token.state';
 
 describe('AuthFacade', () => {
   let service: AuthFacade;
