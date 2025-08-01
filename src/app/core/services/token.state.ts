@@ -1,37 +1,37 @@
 import {
-  Injectable,
-  signal,
   computed,
   effect,
+  Injectable,
+  signal,
   Signal,
   WritableSignal,
 } from '@angular/core';
+import { LocalStorage } from './local-storage';
 
 @Injectable({ providedIn: 'root' })
 export class TokenState {
-  private readonly _accessToken: WritableSignal<string | null> = signal<
-    string | null
-  >(this.getTokenFromStorage('token'));
+  private _accessToken!: WritableSignal<string | null>;
+  private _refreshToken!: WritableSignal<string | null>;
 
-  private readonly _refreshToken: WritableSignal<string | null> = signal<
-    string | null
-  >(this.getTokenFromStorage('refresh_token'));
+  public accessToken!: Signal<string | null>;
+  public refreshToken!: Signal<string | null>;
+  public isAuthenticated!: Signal<boolean>;
 
-  public readonly accessToken: Signal<string | null> =
-    this._accessToken.asReadonly();
-  public readonly refreshToken: Signal<string | null> =
-    this._refreshToken.asReadonly();
-  public readonly isAuthenticated: Signal<boolean> = computed(
-    () => !!this._accessToken(),
-  );
+  constructor(private readonly storage: LocalStorage) {
+    this._accessToken = signal<string | null>(this.storage.getItem('token'));
+    this._refreshToken = signal<string | null>(
+      this.storage.getItem('refresh_token'),
+    );
 
-  constructor() {
+    this.accessToken = this._accessToken.asReadonly();
+    this.refreshToken = this._refreshToken.asReadonly();
+    this.isAuthenticated = computed(() => !!this._accessToken());
     effect(() => {
       const token: string | null = this._accessToken();
-      if (token) {
-        localStorage.setItem('token', token);
+      if (this._accessToken()) {
+        this.storage.setItem('token', token);
       } else {
-        localStorage.removeItem('token');
+        this.storage.removeItem('token');
       }
     });
 
@@ -43,10 +43,6 @@ export class TokenState {
         localStorage.removeItem('refresh_token');
       }
     });
-  }
-
-  private getTokenFromStorage(key: string): string | null {
-    return localStorage.getItem(key);
   }
 
   getAccessToken(): string | null {
