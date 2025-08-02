@@ -1,81 +1,9 @@
-<div class="container py-4">
-  <div class="row justify-content-center">
-    <div class="col-md-6">
-      <div class="card bg-dark border-light">
-        <div class="card-header">
-          <h4 class="text-white mb-0">Create New Group</h4>
-        </div>
-        <div class="card-body">
-          <form [formGroup]="groupForm" (ngSubmit)="onSubmit()">
-            <div class="mb-3">
-              <label for="name" class="form-label text-white">Group Name *</label>
-              <input
-                type="text"
-                class="form-control"
-                [class.is-invalid]="nameControl?.invalid && nameControl?.touched"
-                id="name"
-                formControlName="name"
-                placeholder="Enter group name"
-              />
-              @if (nameControl?.invalid && nameControl?.touched) {
-                <div class="invalid-feedback">
-                  @if (nameControl?.errors?.['required']) {
-                    Group name is required.
-                  } @else if (nameControl?.errors?.['minlength']) {
-                    Group name must be at least 3 characters long.
-                  } @else if (nameControl?.errors?.['maxlength']) {
-                    Group name cannot exceed 50 characters.
-                  }
-                </div>
-              }
-            </div>
-
-            <div class="mb-4">
-              <label for="description" class="form-label text-white">Description (Optional)</label>
-              <textarea
-                class="form-control"
-                [class.is-invalid]="descriptionControl?.invalid && descriptionControl?.touched"
-                id="description"
-                formControlName="description"
-                rows="3"
-                placeholder="Describe what this group is for..."
-              ></textarea>
-              @if (descriptionControl?.invalid && descriptionControl?.touched) {
-                <div class="invalid-feedback">
-                  @if (descriptionControl?.errors?.['maxlength']) {
-                    Description cannot exceed 255 characters.
-                  }
-                </div>
-              }
-            </div>
-
-            <div class="d-flex justify-content-between">
-              <button
-                type="button"
-                class="btn btn-outline-secondary"
-                (click)="onCancel()"
-                [disabled]="isSubmitting()"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                class="btn btn-primary"
-                [disabled]="groupForm.invalid || isSubmitting()"
-              >
-                @if (isSubmitting()) {
-                  <span class="spinner-border spinner-border-sm me-2" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </span>
-                  Creating...
-                } @else {
-                  Create Group
-                }
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+<app-card-shared [cardTitle]="'New Group'" [cardIcon]="'bi bi-people'">
+  <app-group-create-form
+    [form]="groupForm"
+    [isInvalid]="isInvalid()"
+    [isSubmitting]="isSubmitting()"
+    (submitForm)="onSubmit()"
+    (cancelForm)="onCancel()"
+  />
+</app-card-shared>

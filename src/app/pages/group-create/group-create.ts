@@ -1,11 +1,12 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   inject,
+  Signal,
   signal,
   WritableSignal,
 } from '@angular/core';
-import { Router } from '@angular/router';
 import {
   AbstractControl,
   FormBuilder,
@@ -13,13 +14,16 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { GroupFacade } from '../../service/group/group.facade';
+import { Router } from '@angular/router';
 import { GroupRequest } from '../../core/api/groupApi/groupApi.model';
+import { GroupFacade } from '../../service/group/group.facade';
+import { CardShared } from '../../shared/card-shared/card-shared';
+import { GroupCreateForm } from './group-create-form/group-create-form';
 
 @Component({
   selector: 'app-group-create',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, CardShared, GroupCreateForm],
   templateUrl: './group-create.html',
   styleUrls: ['./group-create.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,9 +33,9 @@ export class GroupCreate {
   private readonly router: Router = inject(Router);
   private readonly fb: FormBuilder = inject(FormBuilder);
 
-  readonly isSubmitting: WritableSignal<boolean> = signal(false);
+  isSubmitting: WritableSignal<boolean> = signal(false);
 
-  readonly groupForm: FormGroup = this.fb.group({
+  groupForm: FormGroup = this.fb.group({
     name: [
       '',
       [Validators.required, Validators.minLength(3), Validators.maxLength(50)],
@@ -60,6 +64,8 @@ export class GroupCreate {
 
       setTimeout(() => {
         this.isSubmitting.set(false);
+        console.error('Group created successfully', formData); //FOR TESTING REMOVE BEFORE PR!!!!
+        this.groupForm.reset();
         this.router.navigate(['/dashboard']);
       }, 1000);
     } else {
@@ -77,4 +83,11 @@ export class GroupCreate {
       control?.markAsTouched();
     });
   }
+
+  readonly isInvalid: Signal<(controlName: string) => boolean> = signal(
+    (controlName: string): boolean => {
+      const control: AbstractControl | null = this.groupForm.get(controlName);
+      return !!control && control.invalid && (control.touched || control.dirty);
+    },
+  );
 }
