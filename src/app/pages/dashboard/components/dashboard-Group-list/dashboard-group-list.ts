@@ -6,13 +6,14 @@ import {
   Signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { GroupFacade } from '../../../../service/group/group.facade';
-import { AuthFacade } from '../../../../service/auth/auth.facade';
 import { Group } from '../../../../core/api/groupApi/groupApi.model';
+import { AuthFacade } from '../../../../service/auth/auth.facade';
+import { GroupFacade } from '../../../../service/group/group.facade';
+import { GroupCard } from '../group-card/group-card';
 
 @Component({
   selector: 'app-dashboard-group-list',
-  imports: [],
+  imports: [GroupCard],
   standalone: true,
   templateUrl: './dashboard-group-list.html',
   styleUrls: ['./dashboard-group-list.scss'],

@@ -8,7 +8,7 @@ import {
 import { Group } from '../../core/api/groupApi/groupApi.model';
 import { AuthFacade } from '../../service/auth/auth.facade';
 import { GroupFacade } from '../../service/group/group.facade';
-import { DashboardGroupList } from './components/dashboard-todo-list/dashboard-group-list';
+import { DashboardGroupList } from './components/dashboard-Group-list/dashboard-group-list';
 @Component({
   selector: 'app-dashboard',
   standalone: true,

@@ -1,0 +1,54 @@
+<div class="card h-100">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <h6 class="card-title mb-0">{{ group().name }}</h6>
+      <span class="badge bg-secondary">{{ group().member_count }} members</span>
+    </div>
+
+    <p class="card-text text-muted small mb-3 flex-grow-1">
+      {{ group().description || "No description available" }}
+    </p>
+
+    <div class="text-muted small mb-3 mt-auto">
+      @if (group().user_role) {
+        <span class="me-2 fw-semibold text-dark">Role:</span>
+        <span class="badge rounded-pill bg-info text-dark px-2 py-1 shadow-sm">
+          {{ group().user_role }}
+        </span>
+      }
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <button class="btn btn-outline-success btn-sm" title="Add Member">
+        <i class="bi bi-person-plus me-1"></i>Add Member
+      </button>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-outline-primary btn-sm"
+          (click)="onView()"
+          title="View Group"
+        >
+          <i class="bi bi-eye me-1"></i>View
+        </button>
+
+        @if (group().user_role === "admin") {
+          <button
+            class="btn btn-outline-warning btn-sm"
+            (click)="onEdit()"
+            title="Edit Group"
+          >
+            <i class="bi bi-pencil me-1"></i>Edit
+          </button>
+
+          <button
+            class="btn btn-outline-danger btn-sm"
+            (click)="onDelete()"
+            title="Delete Group"
+          >
+            <i class="bi bi-trash me-1"></i>Delete
+          </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>
