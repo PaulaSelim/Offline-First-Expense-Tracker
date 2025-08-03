@@ -1,69 +1,79 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideZonelessChangeDetection } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Dashboard } from './dashboard';
 
-import { Todo } from '../../core/api/todo/todo.model';
 import { signal } from '@angular/core';
-import { AuthFacade } from '../../service/auth/auth.service';
-import { TodoFacade } from '../../service/todo/todo.service';
+import { Group, GroupRole } from '../../core/api/groupApi/groupApi.model';
+import { AuthFacade } from '../../service/auth/auth.facade';
+import { GroupFacade } from '../../service/group/group.facade';
 
 describe('Dashboard', () => {
   let component: Dashboard;
   let fixture: ComponentFixture<Dashboard>;
-  let mockTodoFacade: jasmine.SpyObj<TodoFacade>;
+  let mockGroupFacade: jasmine.SpyObj<GroupFacade>;
   let mockAuthFacade: jasmine.SpyObj<AuthFacade>;
 
-  const mockTodos: Todo[] = [
+  const mockGroups: Group[] = [
     {
       id: '1',
-      name: 'Test Todo 1',
+      name: 'Test Group 1',
       description: 'Description 1',
-      completed: false,
-      createdAt: '2024-01-01T10:00:00Z',
-      updatedAt: '2024-01-01T10:00:00Z',
+      created_by: 'user1',
+      created_at: '2024-01-01T10:00:00Z',
+      updated_at: '2024-01-01T10:00:00Z',
+      member_count: 5,
+      user_role: GroupRole.ADMIN,
     },
     {
       id: '2',
-      name: 'Test Todo 2',
+      name: 'Test Group 2',
       description: 'Description 2',
-      completed: true,
-      createdAt: '2024-01-02T10:00:00Z',
-      updatedAt: '2024-01-02T10:00:00Z',
+      created_by: 'user2',
+      created_at: '2024-01-02T10:00:00Z',
+      updated_at: '2024-01-02T10:00:00Z',
+      member_count: 3,
+      user_role: GroupRole.MEMBER,
     },
   ];
 
   beforeEach(async () => {
-    mockTodoFacade = jasmine.createSpyObj('TodoFacade', [
-      'loadTodos',
-      'addTodo',
-      'deleteTodo',
-      'updateTodo',
-      'getTodos',
-      'getTotalTodos',
-      'getCompletedTodos',
-      'getPendingTodos',
+    mockGroupFacade = jasmine.createSpyObj('GroupFacade', [
+      'getGroups',
+      'createGroup',
+      'fetchGroups',
+      'deleteGroup',
+      'updateGroup',
+      'fetchGroupById',
+      'isLoading',
+      'getError',
     ]);
-    mockTodoFacade.getTodos.and.returnValue(signal(mockTodos));
-    mockTodoFacade.getTotalTodos.and.returnValue(mockTodos.length);
-    mockTodoFacade.getCompletedTodos.and.returnValue(
-      mockTodos.filter((t) => t.completed).length,
-    );
-    mockTodoFacade.getPendingTodos.and.returnValue(
-      mockTodos.filter((t) => !t.completed).length,
-    );
+    mockGroupFacade.getGroups.and.returnValue(signal(mockGroups));
+    mockGroupFacade.isLoading.and.returnValue(signal(false));
+    mockGroupFacade.getError.and.returnValue(signal(null));
 
-    mockAuthFacade = jasmine.createSpyObj('AuthFacade', ['getCurretUsername']);
-    mockAuthFacade.getCurretUsername.and.returnValue(signal('testuser'));
+    mockAuthFacade = jasmine.createSpyObj('AuthFacade', [
+      'getCurrentUsername',
+      'getCurrentUserEmail',
+      'getProfile',
+      'isAuthenticated',
+      'getCurrentUser',
+    ]);
+    mockAuthFacade.getCurrentUsername.and.returnValue(signal('testuser'));
+    mockAuthFacade.getCurrentUserEmail.and.returnValue(
+      signal('test@example.com'),
+    );
+    mockAuthFacade.isAuthenticated.and.returnValue(signal(true));
+    mockAuthFacade.getCurrentUser.and.returnValue(signal(null));
 
     await TestBed.configureTestingModule({
       imports: [Dashboard],
       providers: [
         provideRouter([
           { path: '', component: {} as any },
-          { path: 'edit/:id', component: {} as any },
+          { path: 'group/:id', component: {} as any },
         ]),
-        { provide: TodoFacade, useValue: mockTodoFacade },
+        { provide: GroupFacade, useValue: mockGroupFacade },
         { provide: AuthFacade, useValue: mockAuthFacade },
         provideZonelessChangeDetection(),
       ],
@@ -77,48 +87,75 @@ describe('Dashboard', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should get todo list from TodoFacade', () => {
-    expect(component.todoList()).toEqual(mockTodos);
+  it('should get group list from GroupFacade', () => {
+    expect(component.groupList()).toEqual(mockGroups);
   });
 
-  it('should get username from AuthFacade', () => {
-    expect(component.username()).toBe('testuser');
+  it('should have access to the groupProvider', () => {
+    expect(component['groupProvider']).toBeDefined();
   });
 
-  it('should handle guest username', () => {
-    mockAuthFacade.getCurretUsername.and.returnValue(signal('Guest'));
+  it('should handle empty group list', () => {
+    const emptyGroups: Group[] = [];
+    mockGroupFacade.getGroups.and.returnValue(signal(emptyGroups));
 
     fixture = TestBed.createComponent(Dashboard);
     component = fixture.componentInstance;
 
-    expect(component.username()).toBe('Guest');
+    expect(component.groupList()).toEqual([]);
   });
 
-  it('should call addTodo with correct parameters', () => {
-    const name = 'New Todo';
-    const description = 'New Description';
-
-    component.onAdd(name, description);
-
-    expect(mockTodoFacade.addTodo).toHaveBeenCalledWith(name, description);
+  it('should call getGroups on component initialization', () => {
+    expect(mockGroupFacade.getGroups).toHaveBeenCalled();
   });
 
-  it('should handle empty todo list', () => {
-    const emptyTodos: Todo[] = [];
-    mockTodoFacade.getTodos.and.returnValue(signal(emptyTodos));
-    mockTodoFacade.getTotalTodos.and.returnValue(0);
-    mockTodoFacade.getCompletedTodos.and.returnValue(0);
-    mockTodoFacade.getPendingTodos.and.returnValue(0);
-
-    fixture = TestBed.createComponent(Dashboard);
-    component = fixture.componentInstance;
-
-    expect(component.todoList()).toEqual([]);
+  it('should display groups with correct structure', () => {
+    const groups = component.groupList();
+    expect(groups.length).toBe(2);
+    expect(groups[0].name).toBe('Test Group 1');
+    expect(groups[0].user_role).toBe(GroupRole.ADMIN);
+    expect(groups[1].name).toBe('Test Group 2');
+    expect(groups[1].user_role).toBe(GroupRole.MEMBER);
   });
 
-  it('should call onAdd with empty strings', () => {
-    component.onAdd('', '');
+  it('should handle groups with different roles', () => {
+    const adminGroup = mockGroups.find((g) => g.user_role === GroupRole.ADMIN);
+    const memberGroup = mockGroups.find(
+      (g) => g.user_role === GroupRole.MEMBER,
+    );
 
-    expect(mockTodoFacade.addTodo).toHaveBeenCalledWith('', '');
+    expect(adminGroup).toBeDefined();
+    expect(memberGroup).toBeDefined();
+    expect(adminGroup?.user_role).toBe(GroupRole.ADMIN);
+    expect(memberGroup?.user_role).toBe(GroupRole.MEMBER);
+  });
+
+  it('should handle groups with different member counts', () => {
+    const groups = component.groupList();
+    expect(groups[0].member_count).toBe(5);
+    expect(groups[1].member_count).toBe(3);
+  });
+
+  it('should render dashboard header component', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    const dashboardHeader = compiled.querySelector('app-dashboard-header');
+    expect(dashboardHeader).toBeTruthy();
+  });
+
+  it('should render dashboard group list component', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    const dashboardGroupList = compiled.querySelector(
+      'app-dashboard-group-list',
+    );
+    expect(dashboardGroupList).toBeTruthy();
+  });
+
+  it('should have the correct CSS class on the main container', () => {
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement;
+    const container = compiled.querySelector('.dashboard.container');
+    expect(container).toBeTruthy();
   });
 });
