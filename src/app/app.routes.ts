@@ -1,7 +1,6 @@
 import { Routes } from '@angular/router';
 import { ROUTE_PATHS, ROUTER_LINKS } from '../routes.model';
 import { authGuard } from './core/guards/auth-guard/auth-guard';
-import { GroupCreate } from './pages/group-create/group-create';
 import { GroupDetail } from './pages/group-detail/group-detail';
 import { GroupEdit } from './pages/group-edit/group-edit';
 
@@ -36,8 +35,12 @@ export const routes: Routes = [
   },
   {
     path: ROUTE_PATHS.GROUPS,
-    component: GroupCreate,
-    title: 'Create Group',
+    loadComponent: () =>
+      import('./pages/group-create/group-create').then(
+        (m: typeof import('./pages/group-create/group-create')) =>
+          m.GroupCreate,
+      ),
+    canActivate: [authGuard],
   },
   {
     path: ROUTE_PATHS.GROUP_DETAIL,
