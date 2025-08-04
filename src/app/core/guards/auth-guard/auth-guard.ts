@@ -1,17 +1,16 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { TokenState } from '../../services/token.state';
+import { AuthFacade } from '../../../service/auth/auth.facade';
 
-export const authGuard: CanActivateFn = () => {
-  const tokenState: TokenState = inject(TokenState);
+export const authGuard: CanActivateFn = async () => {
   const router: Router = inject(Router);
 
-  const accessToken: string | null = tokenState.getAccessToken();
+  const authFacade: AuthFacade = inject(AuthFacade);
 
-  if (accessToken) {
-    return true;
-  } else {
+  const isTokenValidGuard: boolean = await authFacade.isTokenValid();
+  if (!isTokenValidGuard) {
     router.navigate(['/login']);
     return false;
   }
+  return true;
 };

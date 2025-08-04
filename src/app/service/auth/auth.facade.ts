@@ -123,31 +123,49 @@ export class AuthFacade {
     this.refreshToken(refresh_token!);
     return this.tokenState.getAccessToken();
   }
+  private setProfile(user: User): void {
+    const current: AuthenticationResponse | null = authData();
+    if (current) {
+      setAuthData({
+        ...current,
+        data: {
+          ...current.data,
+          user,
+        },
+      });
+    } else {
+      setAuthData({
+        data: {
+          user,
+          token: '',
+          refresh_token: '',
+        },
+      });
+    }
+  }
+
   getProfile(): void {
     this.api.getProfile().subscribe({
       next: (user: User) => {
-        const current: AuthenticationResponse | null = authData();
-        if (current) {
-          setAuthData({
-            ...current,
-            data: {
-              ...current.data,
-              user,
-            },
-          });
-        } else {
-          setAuthData({
-            data: {
-              user,
-              token: '',
-              refresh_token: '',
-            },
-          });
-        }
+        this.setProfile(user);
       },
       error: () => {
         this.setError('Failed to fetch user profile.');
       },
+    });
+  }
+  isTokenValid(): Promise<boolean> {
+    return new Promise((resolve: (value: boolean) => void) => {
+      this.api.getProfile().subscribe({
+        next: (user: User) => {
+          this.setProfile(user);
+          resolve(true);
+        },
+        error: () => {
+          this.setError('Failed to fetch user profile.');
+          resolve(false);
+        },
+      });
     });
   }
 }
