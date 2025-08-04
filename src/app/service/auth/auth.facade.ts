@@ -97,9 +97,10 @@ export class AuthFacade {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    this.tokenState.clearTokens();
     resetAuthState();
     this.toast.success('Logout successful!');
+    this.router.navigate(['/login']);
   }
 
   refreshToken(refreshToken: string): Promise<void> {

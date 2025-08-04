@@ -12,7 +12,7 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { ROUTER_LINKS } from '../../../routes.model';
 import { LoginRequest } from '../../core/api/authApi/authApi.model';
 import { RegexPatterns } from '../../core/validators/regex.make';
@@ -36,6 +36,7 @@ import { LoginForm } from './login-form/login-form';
 export class Login implements OnInit {
   readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   readonly AuthFacade: AuthFacade = inject(AuthFacade);
+  private router: Router = inject(Router);
   readonly form: FormGroup = new FormGroup({
     email: new FormControl('', [Validators.required, Validators.email]),
     password: new FormControl('', [
@@ -46,7 +47,11 @@ export class Login implements OnInit {
   });
 
   ngOnInit(): void {
-    this.AuthFacade.logout();
+    this.AuthFacade.isTokenValid().then((isValid: boolean) => {
+      if (isValid) {
+        this.router.navigate(['/dashboard']);
+      }
+    });
   }
 
   isInvalid(controlName: string): boolean {
