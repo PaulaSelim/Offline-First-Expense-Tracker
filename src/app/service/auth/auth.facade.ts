@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, Signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
+import { ROUTER_LINKS } from '../../../routes.model';
 import {
   AuthenticationResponse,
   AuthenticationTokens,
@@ -27,6 +28,7 @@ export class AuthFacade {
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly tokenState: TokenState = inject(TokenState);
   private router: Router = inject(Router);
+  readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   login(data: LoginRequest): void {
     setAuthLoading(true);
     setAuthError(null);
@@ -36,7 +38,7 @@ export class AuthFacade {
         setAuthData(res);
         this.tokenState.setTokens(res.data.token, res.data.refresh_token);
         this.toast.success('Login successful!');
-        this.router.navigate(['/dashboard']);
+        this.router.navigate([ROUTER_LINKS.DASHBOARD]);
       },
       error: () => {
         setAuthError('Invalid username or password');
@@ -100,7 +102,7 @@ export class AuthFacade {
     this.tokenState.clearTokens();
     resetAuthState();
     this.toast.success('Logout successful!');
-    this.router.navigate(['/login']);
+    this.router.navigate([ROUTER_LINKS.LOGIN]);
   }
 
   refreshToken(refreshToken: string): Promise<void> {
