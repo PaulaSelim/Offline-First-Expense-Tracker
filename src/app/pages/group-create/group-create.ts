@@ -62,12 +62,9 @@ export class GroupCreate {
 
       this.groupProvider.createGroup(formData);
 
-      setTimeout(() => {
-        this.isSubmitting.set(false);
-        console.error('Group created successfully', formData); //FOR TESTING REMOVE BEFORE PR!!!!
-        this.groupForm.reset();
-        this.router.navigate(['/dashboard']);
-      }, 1000);
+      this.isSubmitting.set(false);
+      this.groupForm.reset();
+      this.router.navigate(['/dashboard']);
     } else {
       this.markFormGroupTouched();
     }
