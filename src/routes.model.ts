@@ -1,6 +1,7 @@
 export enum ROUTE_PATHS {
   LOGIN = 'login',
   REGISTER = 'register',
+  PROFILE = 'profile',
   ROOT = '',
   DASHBOARD = 'dashboard',
   GROUPS = 'groups/create',
@@ -11,6 +12,7 @@ export enum ROUTE_PATHS {
 export enum ROUTER_LINKS {
   LOGIN = `/${ROUTE_PATHS.LOGIN}`,
   REGISTER = `/${ROUTE_PATHS.REGISTER}`,
+  PROFILE = `/${ROUTE_PATHS.PROFILE}`,
   ROOT = `/${ROUTE_PATHS.ROOT}`,
   DASHBOARD = `/${ROUTE_PATHS.DASHBOARD}`,
   GROUPS = `/${ROUTE_PATHS.GROUPS}`,

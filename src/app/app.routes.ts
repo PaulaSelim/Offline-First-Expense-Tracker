@@ -24,7 +24,14 @@ export const routes: Routes = [
         (m: typeof import('./pages/register/register')) => m.Register,
       ),
   },
-
+  {
+    path: ROUTE_PATHS.PROFILE,
+    loadComponent: () =>
+      import('./pages/profile-page/profile-page').then(
+        (m: typeof import('./pages/profile-page/profile-page')) =>
+          m.ProfilePage,
+      ),
+  },
   {
     path: ROUTE_PATHS.DASHBOARD,
     loadComponent: () =>

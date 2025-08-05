@@ -6,7 +6,7 @@ import {
   OnInit,
   Signal,
 } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ROUTER_LINKS } from '../../../../../routes.model';
 import { AuthFacade } from '../../../../service/auth/auth.facade';
 
@@ -18,6 +18,7 @@ import { AuthFacade } from '../../../../service/auth/auth.facade';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardHeader implements OnInit {
+  private router: Router = inject(Router);
   private readonly userProvider: AuthFacade = inject(AuthFacade);
   readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   ngOnInit(): void {
@@ -28,5 +29,9 @@ export class DashboardHeader implements OnInit {
 
   logout(): void {
     this.userProvider.logout();
+  }
+
+  navigateToProfile(): void {
+    this.router.navigate([ROUTER_LINKS.PROFILE]);
   }
 }

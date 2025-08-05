@@ -19,7 +19,9 @@ import {
   setAuthData,
   setAuthError,
   setAuthLoading,
+  userCreatedAt,
   userEmail,
+  userId,
   userName,
 } from '../../core/state-management/auth.state';
 @Injectable({ providedIn: 'root' })
@@ -86,6 +88,14 @@ export class AuthFacade {
     return userEmail;
   }
 
+  getCurrentUserId(): Signal<string> {
+    return userId;
+  }
+
+  getCurrentUserCreatedAt(): Signal<string | undefined> {
+    return userCreatedAt;
+  }
+
   getError(): typeof authError {
     return authError;
   }
@@ -98,7 +108,14 @@ export class AuthFacade {
     return authLoading;
   }
 
+  confirmLogout(): boolean {
+    return window.confirm('Are you sure you want to logout?');
+  }
+
   logout(): void {
+    if (!this.confirmLogout()) {
+      return;
+    }
     this.tokenState.clearTokens();
     resetAuthState();
     this.toast.success('Logout successful!');
