@@ -1,0 +1,25 @@
+<div class="d-flex align-items-center mb-4 p-3 bg-light rounded shadow-sm">
+  <i class="bi bi-person-circle fs-2 text-primary me-3"></i>
+  <div>
+    <h2 class="mb-1 text-primary">{{ username() }}</h2>
+    <span class="text-muted">{{ userEmail() }}</span>
+  </div>
+  <div class="ms-auto">
+    <a class="btn btn-outline-primary d-flex align-items-center">
+      <i class="bi bi-person me-2"></i>
+      View Profile
+    </a>
+  </div>
+  <div class="ms-3">
+    <a
+      class="btn btn-outline-danger d-flex align-items-center"
+      (click)="logout()"
+      (keyup.enter)="logout()"
+      tabindex="0"
+      role="button"
+    >
+      <i class="bi bi-box-arrow-right me-2"></i>
+      Logout
+    </a>
+  </div>
+</div>

@@ -1,28 +1,34 @@
-import { inject, Injectable, computed, Signal } from '@angular/core';
-import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { computed, inject, Injectable, Signal } from '@angular/core';
+import { Router } from '@angular/router';
+import { ToastrService } from 'ngx-toastr';
+import { ROUTER_LINKS } from '../../../routes.model';
 import {
+  AuthenticationResponse,
+  AuthenticationTokens,
   LoginRequest,
   RegisterRequest,
-  AuthenticationResponse,
   User,
-  AuthenticationTokens,
 } from '../../core/api/authApi/authApi.model';
+import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { TokenState } from '../../core/services/token.state';
 import {
   authData,
-  authLoading,
   authError,
-  setAuthLoading,
-  setAuthError,
-  setAuthData,
+  authLoading,
   resetAuthState,
+  setAuthData,
+  setAuthError,
+  setAuthLoading,
+  userEmail,
+  userName,
 } from '../../core/state-management/auth.state';
-import { ToastrService } from 'ngx-toastr';
-import { TokenState } from '../../core/services/token.state';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly tokenState: TokenState = inject(TokenState);
+  private router: Router = inject(Router);
+  readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   login(data: LoginRequest): void {
     setAuthLoading(true);
     setAuthError(null);
@@ -32,6 +38,7 @@ export class AuthFacade {
         setAuthData(res);
         this.tokenState.setTokens(res.data.token, res.data.refresh_token);
         this.toast.success('Login successful!');
+        this.router.navigate([ROUTER_LINKS.DASHBOARD]);
       },
       error: () => {
         setAuthError('Invalid username or password');
@@ -72,11 +79,17 @@ export class AuthFacade {
   }
 
   getCurrentUsername(): Signal<string> {
-    return computed(() => authData()?.data.user?.username ?? '');
+    return userName;
   }
+
+  getCurrentUserEmail(): Signal<string> {
+    return userEmail;
+  }
+
   getError(): typeof authError {
     return authError;
   }
+
   setError(message: string): void {
     setAuthError(message);
   }
@@ -86,9 +99,10 @@ export class AuthFacade {
   }
 
   logout(): void {
-    localStorage.removeItem('token');
+    this.tokenState.clearTokens();
     resetAuthState();
     this.toast.success('Logout successful!');
+    this.router.navigate([ROUTER_LINKS.LOGIN]);
   }
 
   refreshToken(refreshToken: string): Promise<void> {
@@ -111,5 +125,50 @@ export class AuthFacade {
     const refresh_token: string | null = this.tokenState.getRefreshToken();
     this.refreshToken(refresh_token!);
     return this.tokenState.getAccessToken();
+  }
+  private setProfile(user: User): void {
+    const current: AuthenticationResponse | null = authData();
+    if (current) {
+      setAuthData({
+        ...current,
+        data: {
+          ...current.data,
+          user,
+        },
+      });
+    } else {
+      setAuthData({
+        data: {
+          user,
+          token: '',
+          refresh_token: '',
+        },
+      });
+    }
+  }
+
+  getProfile(): void {
+    this.api.getProfile().subscribe({
+      next: (user: User) => {
+        this.setProfile(user);
+      },
+      error: () => {
+        this.setError('Failed to fetch user profile.');
+      },
+    });
+  }
+  isTokenValid(): Promise<boolean> {
+    return new Promise((resolve: (value: boolean) => void) => {
+      this.api.getProfile().subscribe({
+        next: (user: User) => {
+          this.setProfile(user);
+          resolve(true);
+        },
+        error: () => {
+          this.setError('Failed to fetch user profile.');
+          resolve(false);
+        },
+      });
+    });
   }
 }

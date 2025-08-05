@@ -1,0 +1,46 @@
+<div
+  class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2"
+>
+  <h4 class="text-blue mb-0"><i class="bi bi-people me-2"></i>Your Groups</h4>
+  <button
+    class="btn btn-outline-primary d-flex align-items-center"
+    (click)="onCreateGroup()"
+  >
+    <i class="bi bi-plus-lg me-2"></i>Create Group
+  </button>
+</div>
+
+@if (isLoading()) {
+  <div class="text-center py-4">
+    <div class="spinner-border text-blue" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+  </div>
+} @else if (error()) {
+  <div class="alert alert-danger" role="alert">
+    {{ error() }}
+  </div>
+} @else if (groupList().length > 0) {
+  <div class="row g-3">
+    @for (group of groupList(); track group.id) {
+      <div class="col-md-6 col-lg-4">
+        <app-group-card
+          [group]="group"
+          (view)="onViewGroup($event)"
+          (edit)="onEditGroup($event)"
+          (delete)="onDelete($event.id, $event.name)"
+        ></app-group-card>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="text-center py-5">
+    <div class="text-secondary">
+      <h6>No groups found</h6>
+      <p>You're not a member of any groups yet.</p>
+      <button class="btn btn-outline-light" (click)="onCreateGroup()">
+        Create Your First Group
+      </button>
+    </div>
+  </div>
+}

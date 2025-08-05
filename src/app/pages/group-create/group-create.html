@@ -1,0 +1,9 @@
+<app-card-shared [cardTitle]="'New Group'" [cardIcon]="'bi bi-people'">
+  <app-group-create-form
+    [form]="groupForm"
+    [isInvalid]="isInvalid()"
+    [isSubmitting]="isSubmitting()"
+    (submitForm)="onSubmit()"
+    (cancelForm)="onCancel()"
+  />
+</app-card-shared>

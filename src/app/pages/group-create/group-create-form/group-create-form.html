@@ -1,0 +1,78 @@
+<form class="form" [formGroup]="form()" (ngSubmit)="onSubmit()">
+  <div class="container mt-5">
+    <div class="form-group mb-3">
+      <label class="form-label" for="name">Group Name *</label>
+      <input
+        class="form-control"
+        type="text"
+        id="name"
+        placeholder="Enter group name"
+        formControlName="name"
+        [class.is-invalid]="isInvalid()('name')"
+      />
+      @if (isInvalid()("name")) {
+        <div class="invalid-feedback">
+          <strong>Group name is invalid:</strong>
+          <ul>
+            @if (form().get("name")?.errors?.["required"]) {
+              <li>Group name is required.</li>
+            }
+            @if (form().get("name")?.errors?.["minlength"]) {
+              <li>Group name must be at least 3 characters long.</li>
+            }
+            @if (form().get("name")?.errors?.["maxlength"]) {
+              <li>Group name cannot exceed 50 characters.</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <div class="form-group mb-3">
+      <label class="form-label" for="description">Description (Optional)</label>
+      <textarea
+        class="form-control"
+        id="description"
+        placeholder="Describe what this group is for..."
+        formControlName="description"
+        rows="3"
+        [class.is-invalid]="isInvalid()('description')"
+      ></textarea>
+      @if (isInvalid()("description")) {
+        <div class="invalid-feedback">
+          <strong>Description is invalid:</strong>
+          <ul>
+            @if (form().get("description")?.errors?.["maxlength"]) {
+              <li>Description cannot exceed 255 characters.</li>
+            }
+          </ul>
+        </div>
+      }
+    </div>
+
+    <div class="d-flex justify-content-between mb-3">
+      <button
+        type="button"
+        class="btn btn-outline-secondary"
+        (click)="onCancel()"
+        [disabled]="isSubmitting()"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        class="btn btn-primary"
+        [disabled]="form().invalid || isSubmitting()"
+      >
+        @if (isSubmitting()) {
+          <span class="spinner-border spinner-border-sm me-2" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </span>
+          Creating...
+        } @else {
+          Create Group
+        }
+      </button>
+    </div>
+  </div>
+</form>
