@@ -1,0 +1,15 @@
+<!-- Stats Row -->
+<div class="row text-center">
+  <div class="col-md-6">
+    <div class="border-end border-secondary">
+      <h5 class="text-white">{{ getExpenseCount() }}</h5>
+      <small class="text-secondary">Total Expenses</small>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <h5 class="text-white">
+      {{ getFormattedAmount(getTotalAmount()) }}
+    </h5>
+    <small class="text-secondary">Total Amount</small>
+  </div>
+</div>

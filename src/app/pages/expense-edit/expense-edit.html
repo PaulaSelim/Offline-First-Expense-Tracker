@@ -1,0 +1,28 @@
+@if (isLoading()) {
+  <div class="container py-4">
+    <div class="text-center py-5">
+      <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-white mt-3">Loading expense details...</p>
+    </div>
+  </div>
+} @else {
+  <app-card-shared [cardTitle]="'Edit Expense'" [cardIcon]="'✏️'">
+    <app-expense-edit-form
+      [form]="expenseForm"
+      [isInvalid]="isInvalid()"
+      [isSubmitting]="isSubmitting()"
+      [groupMembers]="groupMembers()"
+      [categories]="categories"
+      [selectedGroup]="selectedGroup()"
+      [selectedExpense]="selectedExpense()"
+      (submitForm)="onSubmit()"
+      (cancelForm)="onCancel()"
+      (participantToggle)="onParticipantToggle($event)"
+      (selectAllParticipants)="onSelectAllParticipants()"
+      (clearAllParticipants)="onClearAllParticipants()"
+      [isParticipantSelected]="isParticipantSelected.bind(this)"
+    />
+  </app-card-shared>
+}

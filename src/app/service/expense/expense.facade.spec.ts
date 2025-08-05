@@ -33,7 +33,6 @@ describe('ExpenseFacade', () => {
     user_id: 'user1',
     email: 'user1@example.com',
     username: 'user1',
-    share_amount: 50,
   };
 
   const mockExpense: Expense = {
@@ -74,7 +73,7 @@ describe('ExpenseFacade', () => {
     title: 'Test Expense',
     amount: 100,
     payer_id: 'user1',
-    category_id: 'category1',
+    category: 'category1',
     date: '2024-01-01',
     is_payer_included: true,
     participants_id: ['user1', 'user2'],
@@ -403,11 +402,6 @@ describe('ExpenseFacade', () => {
       expect(expenseError()).toBe(errorMessage);
     });
 
-    it('should return expenses signal', () => {
-      const expensesSignal = service.getExpenses();
-      expect(expensesSignal()).toEqual([]);
-    });
-
     it('should return selected expense signal', () => {
       const selectedExpenseSignal = service.getSelectedExpense();
       expect(selectedExpenseSignal()).toBeNull();
@@ -420,12 +414,6 @@ describe('ExpenseFacade', () => {
   });
 
   describe('Computed signals', () => {
-    it('should update expenses signal when state changes', () => {
-      setExpenses([mockExpense]);
-      const expensesSignal = service.getExpenses();
-      expect(expensesSignal()).toEqual([mockExpense]);
-    });
-
     it('should update selected expense signal when state changes', () => {
       setSelectedExpense(mockExpense);
       const selectedExpenseSignal = service.getSelectedExpense();

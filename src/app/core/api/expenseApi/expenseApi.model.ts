@@ -4,7 +4,7 @@ export interface ExpenseRequest {
   title: string;
   amount: number;
   payer_id: string;
-  category_id: string;
+  category: string;
   date: string;
   is_payer_included: boolean;
   participants_id: string[];
@@ -12,9 +12,9 @@ export interface ExpenseRequest {
 
 export interface Participant {
   user_id: string;
+  id?: string;
   email?: string;
   username?: string;
-  share_amount?: number;
 }
 
 export interface Expense {
@@ -23,7 +23,7 @@ export interface Expense {
   group_name?: string;
   title: string;
   amount: number;
-  payer_id: string;
+  payer_id?: string;
   category: string;
   date: string;
   created_at: string;
@@ -59,4 +59,13 @@ export interface ExpenseResponse {
 }
 export interface ExpenseListResponse {
   data: { expenses: Expense[]; pagination: Pagination };
+}
+
+export interface ExpenseUpdateRequest {
+  title: string;
+  amount: number;
+  category: string;
+  payer_id: string;
+  date: string;
+  participants_id: string[];
 }

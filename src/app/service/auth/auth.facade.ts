@@ -78,6 +78,9 @@ export class AuthFacade {
     return computed(() => authData()?.data.user ?? null);
   }
 
+  getCurrentUserId(): Signal<string> {
+    return computed(() => authData()?.data.user.id ?? '');
+  }
   getCurrentUsername(): Signal<string> {
     return userName;
   }
