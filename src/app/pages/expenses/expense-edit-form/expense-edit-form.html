@@ -1,0 +1,96 @@
+<div class="container py-4">
+  @if (isLoading()) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-light" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+      <p class="text-white mt-3">Loading expense...</p>
+    </div>
+  } @else {
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="card bg-dark border-light">
+          <div class="card-header">
+            <h3 class="text-white mb-0">Edit Expense</h3>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="expenseForm" (ngSubmit)="onSubmit()">
+              
+              <!-- Title Input -->
+              <div class="form-group mb-3">
+                <label class="form-label text-white" for="title">Expense Title *</label>
+                <input
+                  class="form-control"
+                  type="text"
+                  id="title"
+                  placeholder="Enter expense title"
+                  formControlName="title"
+                  [class.is-invalid]="isInvalid('title')"
+                />
+                @if (isInvalid('title')) {
+                  <div class="invalid-feedback">
+                    <strong>Title is invalid:</strong>
+                    <ul>
+                      @if (expenseForm.get('title')?.errors?.['required']) {
+                        <li>Title is required.</li>
+                      }
+                      @if (expenseForm.get('title')?.errors?.['minlength']) {
+                        <li>Title must be at least 3 characters long.</li>
+                      }
+                      @if (expenseForm.get('title')?.errors?.['maxlength']) {
+                        <li>Title cannot exceed 100 characters.</li>
+                      }
+                    </ul>
+                  </div>
+                }
+              </div>
+
+              <!-- Amount and Date Row -->
+              <app-expense-amount-date-row
+                [form]="expenseForm"
+                [isInvalid]="isInvalid.bind(this)"
+              ></app-expense-amount-date-row>
+
+              <!-- Category Selection -->
+              <app-expense-category-selection
+                [form]="expenseForm"
+                [isInvalid]="isInvalid.bind(this)"
+                [categories]="categories"
+              ></app-expense-category-selection>
+
+              <!-- Note: Payer is not editable in edit form -->
+              @if (currentExpense()?.payer) {
+                <div class="form-group mb-3">
+                  <label class="form-label text-white">Paid By</label>
+                  <div class="alert alert-info">
+                    <strong>{{ currentExpense()?.payer?.username || currentExpense()?.payer?.email }}</strong>
+                    <small class="d-block text-muted">Payer cannot be changed when editing an expense</small>
+                  </div>
+                </div>
+              }
+
+              <!-- Participant Selection -->
+              <app-expense-participant-selection
+                [members]="groupMembers()"
+                [isSelected]="isParticipantSelected.bind(this)"
+                (selectAll)="onSelectAllParticipants()"
+                (clearAll)="onClearAllParticipants()"
+                (toggleParticipant)="onToggleParticipant($event)"
+              ></app-expense-participant-selection>
+
+              <!-- Form Actions -->
+              <app-expense-form-actions
+                [form]="expenseForm"
+                [isSubmitting]="isSubmitting()"
+                [submitText]="'Update Expense'"
+                [loadingText]="'Updating...'"
+                [submitButtonClass]="'btn btn-warning'"
+                (cancel)="onCancel()"
+              ></app-expense-form-actions>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+</div>

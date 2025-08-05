@@ -52,4 +52,31 @@ export const routes: Routes = [
     component: GroupEdit,
     title: 'Edit Group',
   },
+  {
+    path: ROUTE_PATHS.GROUP_EXPENSES,
+    loadComponent: () =>
+      import('./pages/expenses/expenses').then(
+        (m: typeof import('./pages/expenses/expenses')) => m.Expenses,
+      ),
+    canActivate: [authGuard],
+    title: 'Group Expenses',
+  },
+  {
+    path: ROUTE_PATHS.EXPENSE_CREATE,
+    loadComponent: () =>
+      import('./pages/expenses/expense-create-form/expense-create-form').then(
+        (m: typeof import('./pages/expenses/expense-create-form/expense-create-form')) => m.ExpenseCreateForm,
+      ),
+    canActivate: [authGuard],
+    title: 'Create Expense',
+  },
+  {
+    path: ROUTE_PATHS.EXPENSE_EDIT,
+    loadComponent: () =>
+      import('./pages/expenses/expense-edit-form/expense-edit-form').then(
+        (m: typeof import('./pages/expenses/expense-edit-form/expense-edit-form')) => m.ExpenseEditForm,
+      ),
+    canActivate: [authGuard],
+    title: 'Edit Expense',
+  },
 ];
