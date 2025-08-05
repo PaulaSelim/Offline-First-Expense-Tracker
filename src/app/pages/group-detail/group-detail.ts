@@ -27,6 +27,7 @@ export class GroupDetail implements OnInit {
   private readonly groupProvider: GroupFacade = inject(GroupFacade);
   private readonly router: Router = inject(Router);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);
+  readonly GroupRole: typeof GroupRole = GroupRole;
 
   readonly isLoading: WritableSignal<boolean> = signal(true);
   readonly selectedGroup: Signal<Group | null> =

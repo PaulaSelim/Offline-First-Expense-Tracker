@@ -112,8 +112,8 @@
                 <div class="d-flex align-items-center gap-2">
                   <span
                     class="badge"
-                    [class.bg-warning]="member.role === 'admin'"
-                    [class.bg-secondary]="member.role === 'member'"
+                    [class.bg-warning]="member.role === GroupRole.ADMIN"
+                    [class.bg-secondary]="member.role === GroupRole.MEMBER"
                   >
                     {{ member.role }}
                   </span>
