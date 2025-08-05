@@ -31,8 +31,8 @@ export interface GroupMember {
 }
 
 export enum GroupRole {
-  ADMIN = 'admin',
-  MEMBER = 'member',
+  ADMIN = 'Admin',
+  MEMBER = 'Member',
 }
 export interface Group {
   id: string;
