@@ -1,0 +1,66 @@
+<div class="form-group mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <label class="form-label mb-0">Who should split this expense? *</label>
+    <div>
+      <button
+        type="button"
+        class="btn btn-outline-primary btn-sm me-2"
+        (click)="onSelectAll()"
+      >
+        Select All
+      </button>
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm"
+        (click)="onClearAll()"
+      >
+        Clear All
+      </button>
+    </div>
+  </div>
+
+  <div class="row">
+    @for (member of groupMembers(); track member.id) {
+      <div class="col-md-6 mb-2">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            [id]="'participant-' + member.id"
+            [checked]="isParticipantSelected()(member.id)"
+            (change)="onParticipantToggle(member.id)"
+          />
+          <label class="form-check-label" [for]="'participant-' + member.id">
+            <div class="d-flex align-items-center">
+              <div class="me-2">
+                @if (member.role === GroupRole.ADMIN) {
+                  <span class="badge bg-warning text-dark">Admin</span>
+                } @else {
+                  <span class="badge bg-secondary">Member</span>
+                }
+              </div>
+              <div>
+                <div class="fw-bold">
+                  {{ member.username || member.email }}
+                </div>
+                @if (member.username) {
+                  <small class="text-muted">{{ member.email }}</small>
+                }
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    }
+  </div>
+
+  @if (isInvalid()("participants_id")) {
+    <div class="text-danger mt-2">
+      <small
+        ><strong
+          >Please select at least one participant to split the expense.</strong
+        ></small
+      >
+    </div>
+  }
+</div>

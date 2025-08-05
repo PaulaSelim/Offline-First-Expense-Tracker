@@ -1,0 +1,28 @@
+<div [formGroup]="form()" class="form-group mb-3">
+  <label class="form-label" for="title">Expense Title *</label>
+  <input
+    class="form-control"
+    type="text"
+    id="title"
+    placeholder="Enter expense description (e.g., Dinner at restaurant)"
+    formControlName="title"
+    [class.is-invalid]="isInvalid()('title')"
+    (blur)="onBlur()"
+  />
+  @if (isInvalid()("title")) {
+    <div class="invalid-feedback">
+      <strong>Expense title is invalid:</strong>
+      <ul>
+        @if (form().get("title")?.errors?.["required"]) {
+          <li>Expense title is required.</li>
+        }
+        @if (form().get("title")?.errors?.["minlength"]) {
+          <li>Title must be at least 3 characters long.</li>
+        }
+        @if (form().get("title")?.errors?.["maxlength"]) {
+          <li>Title cannot exceed 100 characters.</li>
+        }
+      </ul>
+    </div>
+  }
+</div>

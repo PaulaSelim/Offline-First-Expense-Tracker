@@ -1,0 +1,17 @@
+<div [formGroup]="form()" class="form-group mb-3">
+  <div class="form-check">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="is_payer_included"
+      formControlName="is_payer_included"
+    />
+    <label class="form-check-label" for="is_payer_included">
+      Include payer in expense split
+    </label>
+  </div>
+  <small class="form-text text-muted">
+    Check this if the person who paid should also be included in splitting the
+    expense
+  </small>
+</div>
