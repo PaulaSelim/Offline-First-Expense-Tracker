@@ -1,0 +1,19 @@
+<div class="error-page d-flex align-items-center justify-content-center">
+  <div class="error-container text-center p-4">
+    <h1 class="error-code mb-0">:/</h1>
+    <h2 class="display-6 error-message mb-3">Access Denied</h2>
+    <p class="lead error-message mb-5">
+      You don't have permission to access this page.
+    </p>
+    <div class="d-flex justify-content-center gap-3">
+      <button
+        type="button"
+        class="btn btn-glass px-4 py-2"
+        (click)="backToDashboard()"
+        (keyup.enter)="backToDashboard()"
+      >
+        Return Home
+      </button>
+    </div>
+  </div>
+</div>
