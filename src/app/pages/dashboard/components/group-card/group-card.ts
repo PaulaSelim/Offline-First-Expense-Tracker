@@ -7,7 +7,7 @@ import {
   output,
   OutputEmitterRef,
 } from '@angular/core';
-import { Group } from '../../../../core/api/groupApi/groupApi.model';
+import { Group, GroupRole } from '../../../../core/api/groupApi/groupApi.model';
 
 @Component({
   selector: 'app-group-card',
@@ -17,6 +17,7 @@ import { Group } from '../../../../core/api/groupApi/groupApi.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class GroupCard {
+  GroupRole: typeof GroupRole = GroupRole;
   group: InputSignal<Group> = input.required();
 
   view: OutputEmitterRef<string> = output();

@@ -7,13 +7,13 @@ import {
   signal,
   WritableSignal,
 } from '@angular/core';
-import { Router, ActivatedRoute, RouterLink } from '@angular/router';
-import { GroupFacade } from '../../service/group/group.facade';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   Group,
   GroupMember,
   GroupRole,
 } from '../../core/api/groupApi/groupApi.model';
+import { GroupFacade } from '../../service/group/group.facade';
 
 @Component({
   selector: 'app-group-detail',
@@ -96,7 +96,7 @@ export class GroupDetail implements OnInit {
     if (email && email.trim()) {
       this.groupProvider.addMember(this.groupId, {
         email: email.trim(),
-        role: 'member' as GroupRole,
+        role: GroupRole.MEMBER,
       });
     }
   }
@@ -107,7 +107,7 @@ export class GroupDetail implements OnInit {
 
   isCurrentUserAdmin(): boolean {
     const group: Group | null = this.selectedGroup();
-    return group?.user_role === 'admin';
+    return group?.user_role === GroupRole.ADMIN;
   }
 
   getFormattedDate(dateString: string): string {
