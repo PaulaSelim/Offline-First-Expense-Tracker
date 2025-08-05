@@ -1,0 +1,68 @@
+// Variables
+$gradient-start: #ffffff;
+$gradient-mid: #9aabbd;
+$gradient-end: #606c6e;
+$error-text: rgba(255, 255, 255, 0.9);
+$error-bg: linear-gradient(
+  45deg,
+  $gradient-start 0%,
+  $gradient-mid 50%,
+  $gradient-end 100%
+);
+$glass-bg: rgba(255, 255, 255, 0.2);
+$glass-hover-bg: rgba(255, 255, 255, 0.3);
+$glass-border: 1px solid rgba(255, 255, 255, 0.3);
+
+// Mixins
+@mixin glass-effect {
+  background: $glass-bg;
+  backdrop-filter: blur(10px);
+  border: $glass-border;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+// Keyframes
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+// Styles
+.error-page {
+  min-height: 100vh;
+  background: $error-bg;
+
+  .error-container {
+    max-width: 600px;
+
+    .error-code {
+      font-size: 12rem;
+      font-weight: 900;
+      background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0.5));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: pulse 2s infinite;
+    }
+
+    .error-message {
+      color: $error-text;
+    }
+
+    .btn-glass {
+      @include glass-effect;
+
+      &:hover {
+        background: $glass-hover-bg;
+        color: white;
+      }
+    }
+  }
+}
