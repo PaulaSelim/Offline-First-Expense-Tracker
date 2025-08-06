@@ -1,0 +1,50 @@
+<div [formGroup]="form()" class="row mb-3">
+  <div class="col-md-6">
+    <label class="form-label" for="amount">Amount *</label>
+    <div class="input-group">
+      <span class="input-group-text">$</span>
+      <input
+        class="form-control"
+        type="number"
+        id="amount"
+        placeholder="0.00"
+        step="0.01"
+        min="0.01"
+        max="999999.99"
+        formControlName="amount"
+        [class.is-invalid]="isInvalid()('amount')"
+      />
+    </div>
+    @if (isInvalid()("amount")) {
+      <div class="invalid-feedback d-block">
+        <strong>Amount is invalid:</strong>
+        <ul>
+          @if (form().get("amount")?.errors?.["required"]) {
+            <li>Amount is required.</li>
+          }
+          @if (form().get("amount")?.errors?.["min"]) {
+            <li>Amount must be greater than $0.00.</li>
+          }
+          @if (form().get("amount")?.errors?.["max"]) {
+            <li>Amount cannot exceed $999,999.99.</li>
+          }
+        </ul>
+      </div>
+    }
+  </div>
+  <div class="col-md-6">
+    <label class="form-label" for="date">Date *</label>
+    <input
+      class="form-control"
+      type="date"
+      id="date"
+      formControlName="date"
+      [class.is-invalid]="isInvalid()('date')"
+    />
+    @if (isInvalid()("date")) {
+      <div class="invalid-feedback">
+        <strong>Date is required.</strong>
+      </div>
+    }
+  </div>
+</div>

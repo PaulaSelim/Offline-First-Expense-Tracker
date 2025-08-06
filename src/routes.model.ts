@@ -7,6 +7,10 @@ export enum ROUTE_PATHS {
   GROUPS = 'groups/create',
   GROUP_DETAIL = 'groups/:id',
   GROUP_EDIT = 'groups/:id/edit',
+  GROUP_EXPENSES = 'groups/:id/expenses',
+  EXPENSE_ADD = 'groups/:id/expenses/add',
+  EXPENSE_DETAIL = 'groups/:id/expenses/:expenseId',
+  EXPENSE_EDIT = 'groups/:id/expenses/:expenseId/edit',
 }
 
 export enum ROUTER_LINKS {
@@ -18,4 +22,8 @@ export enum ROUTER_LINKS {
   GROUPS = `/${ROUTE_PATHS.GROUPS}`,
   GROUP_DETAIL = `/${ROUTE_PATHS.GROUP_DETAIL}`,
   GROUP_EDIT = `/${ROUTE_PATHS.GROUP_EDIT}`,
+  GROUP_EXPENSES = `/${ROUTE_PATHS.GROUP_EXPENSES}`,
+  EXPENSE_ADD = `/${ROUTE_PATHS.EXPENSE_ADD}`,
+  EXPENSE_DETAIL = `/${ROUTE_PATHS.EXPENSE_DETAIL}`,
+  EXPENSE_EDIT = `/${ROUTE_PATHS.EXPENSE_EDIT}`,
 }

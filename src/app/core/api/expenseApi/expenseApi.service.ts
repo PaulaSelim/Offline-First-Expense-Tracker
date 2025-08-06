@@ -5,6 +5,7 @@ import {
   ExpenseListResponse,
   ExpenseRequest,
   ExpenseResponse,
+  ExpenseUpdateRequest,
   UserBalanceResponse,
 } from './expenseApi.model';
 import { Observable } from 'rxjs';
@@ -40,7 +41,7 @@ export class ExpenseApiService {
   updateExpense(
     group_id: string,
     expense_id: string,
-    data: ExpenseRequest,
+    data: ExpenseUpdateRequest,
   ): Observable<ExpenseResponse> {
     return this.http.put<ExpenseResponse>(
       `${environment.apiUrl}/groups/${group_id}/expenses/${expense_id}`,

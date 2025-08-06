@@ -24,7 +24,6 @@ describe('ExpenseApiService', () => {
     user_id: 'user1',
     email: 'user1@example.com',
     username: 'user1',
-    share_amount: 50,
   };
 
   const mockExpense: Expense = {
@@ -47,7 +46,7 @@ describe('ExpenseApiService', () => {
     title: 'Test Expense',
     amount: 100,
     payer_id: 'user1',
-    category_id: 'category1',
+    category: 'category1',
     date: '2024-01-01',
     is_payer_included: true,
     participants_id: ['user1', 'user2'],
@@ -346,7 +345,7 @@ describe('ExpenseApiService', () => {
         title: 'Custom Expense',
         amount: 250,
         payer_id: 'user2',
-        category_id: 'category2',
+        category: 'category2',
         date: '2024-02-01',
         is_payer_included: false,
         participants_id: ['user2', 'user3'],

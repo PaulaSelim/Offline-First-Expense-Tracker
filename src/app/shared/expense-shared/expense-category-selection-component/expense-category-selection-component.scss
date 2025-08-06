@@ -1,0 +1,30 @@
+.category-card {
+  min-height: 80px;
+  transition: none;
+  cursor: pointer;
+}
+
+.category-card:hover {
+  background-color: #6c757d !important;
+}
+
+.category-icon {
+  font-size: 1.2rem;
+  line-height: 1;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-name {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  display: block;
+  word-wrap: break-word;
+  hyphens: auto;
+}
+
+.form-check-input:checked + .form-check-label .category-card {
+  background-color: #0d6efd !important;
+}

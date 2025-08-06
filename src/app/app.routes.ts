@@ -59,4 +59,42 @@ export const routes: Routes = [
     component: GroupEdit,
     title: 'Edit Group',
   },
+  {
+    path: ROUTE_PATHS.GROUP_EXPENSES,
+    loadComponent: () =>
+      import('./pages/expense/expense').then(
+        (m: typeof import('./pages/expense/expense')) => m.ExpenseComponent,
+      ),
+    title: 'Group Expenses',
+    canActivate: [authGuard],
+  },
+
+  {
+    path: ROUTE_PATHS.EXPENSE_ADD,
+    loadComponent: () =>
+      import('./pages/expense-create/expense-create').then(
+        (m: typeof import('./pages/expense-create/expense-create')) =>
+          m.ExpenseCreate,
+      ),
+  },
+  {
+    path: ROUTE_PATHS.EXPENSE_DETAIL,
+    loadComponent: () =>
+      import('./pages/expense-detail/expense-detail').then(
+        (m: typeof import('./pages/expense-detail/expense-detail')) =>
+          m.ExpenseDetail,
+      ),
+    title: 'Expense Details',
+    canActivate: [authGuard],
+  },
+  {
+    path: ROUTE_PATHS.EXPENSE_EDIT,
+    loadComponent: () =>
+      import('./pages/expense-edit/expense-edit').then(
+        (m: typeof import('./pages/expense-edit/expense-edit')) =>
+          m.ExpenseEdit,
+      ),
+    title: 'Edit Expense',
+    canActivate: [authGuard],
+  },
 ];

@@ -6,6 +6,8 @@ import {
   ExpenseResponse,
   Expense,
   UserBalanceResponse,
+  ExpenseUpdateRequest,
+  Participant,
 } from '../../core/api/expenseApi/expenseApi.model';
 import {
   setExpenses,
@@ -89,7 +91,7 @@ export class ExpenseFacade {
   updateExpense(
     groupId: string,
     expenseId: string,
-    data: ExpenseRequest,
+    data: ExpenseUpdateRequest,
   ): void {
     setExpenseLoading(true);
     setExpenseError(null);
@@ -172,5 +174,9 @@ export class ExpenseFacade {
 
   getUserBalance(): Signal<number | null> {
     return this._userBalance;
+  }
+
+  getExpenseParticipants(): Signal<Participant[]> {
+    return computed(() => this._selectedExpense()?.participants || []);
   }
 }

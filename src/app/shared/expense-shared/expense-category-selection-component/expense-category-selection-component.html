@@ -1,0 +1,36 @@
+<div [formGroup]="form()" class="form-group mb-3">
+  <label class="form-label">Category *</label>
+  <div class="row">
+    @for (category of categories(); track category.id) {
+      <div class="col-md-3 col-sm-4 col-6 mb-2">
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            [id]="'category-' + category.id"
+            [value]="category.id"
+            formControlName="category"
+          />
+          <label
+            class="form-check-label w-100"
+            [for]="'category-' + category.id"
+          >
+            <div class="card bg-secondary border-light h-100 category-card">
+              <div class="card-body text-center py-2">
+                <i [class]="category.icon" class="me-1"></i>
+                <small class="text-white category-name">{{
+                  category.name
+                }}</small>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+    }
+  </div>
+  @if (isInvalid()("category")) {
+    <div class="text-danger mt-2">
+      <small><strong>Please select a category.</strong></small>
+    </div>
+  }
+</div>

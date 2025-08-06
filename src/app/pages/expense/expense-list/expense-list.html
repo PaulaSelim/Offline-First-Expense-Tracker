@@ -1,0 +1,120 @@
+<!-- Expenses List -->
+<div class="card bg-dark border-light">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <h5 class="text-white mb-0">Recent Expenses</h5>
+    @if (!isLoadingExpenses() && expenses().length > 0) {
+      <small class="text-secondary">{{ expenses().length }} expense(s)</small>
+    }
+  </div>
+  <div class="card-body">
+    @if (isLoadingExpenses()) {
+      <div class="text-center py-4">
+        <div class="spinner-border spinner-border-sm text-light" role="status">
+          <span class="visually-hidden">Loading expenses...</span>
+        </div>
+        <p class="text-white mt-2">Loading expenses...</p>
+      </div>
+    } @else if (expenses().length > 0) {
+      <div class="row">
+        @for (expense of expenses(); track expense.id) {
+          <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card bg-white border-light h-100">
+              <div class="card-body">
+                <div
+                  class="d-flex justify-content-between align-items-start mb-2"
+                >
+                  <div class="d-flex align-items-center">
+                    <i
+                      [class]="expense.category | categoryIcon"
+                      class="me-2"
+                    ></i>
+                    <br />
+                    <div>
+                      <h6 class="text-black mb-1">{{ expense.title }}</h6>
+                      <small class="text-secondary">{{
+                        expense.category
+                      }}</small>
+                    </div>
+                  </div>
+                  <div class="dropdown">
+                    <button
+                      class="btn btn-sm btn-outline-dark dropdown-toggle"
+                      type="button"
+                      data-bs-toggle="dropdown"
+                      aria-expanded="false"
+                    ></button>
+                    <ul class="dropdown-menu dropdown-menu-dark">
+                      <li>
+                        <button
+                          class="dropdown-item"
+                          (click)="onViewExpenseDetail(expense.id)"
+                        >
+                          👁️ View Details
+                        </button>
+                      </li>
+                      <li>
+                        <button
+                          class="dropdown-item"
+                          (click)="onEditExpense(expense.id)"
+                        >
+                          ✏️ Edit
+                        </button>
+                      </li>
+                      <li><hr class="dropdown-divider" /></li>
+                      <li>
+                        <button
+                          class="dropdown-item text-danger"
+                          (click)="onDeleteExpense(expense)"
+                        >
+                          🗑️ Delete
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="mb-3">
+                  <h4 class="text-success mb-1">
+                    {{ getFormattedAmount(expense.amount) }}
+                  </h4>
+                  <small class="text-secondary">
+                    Paid by
+                    {{
+                      expense.payer?.username ||
+                        expense.payer?.email ||
+                        "Unknown"
+                    }}
+                  </small>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center">
+                  <small class="text-secondary">
+                    {{ getFormattedDate(expense.date) }}
+                  </small>
+                  @if (expense.participant_count) {
+                    <span class="badge bg-info">
+                      {{ expense.participant_count }} participant(s)
+                    </span>
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="text-center py-5">
+        <div class="mb-3">
+          <span class="display-1">💸</span>
+        </div>
+        <h4 class="text-white mb-3">No Expenses Yet</h4>
+        <p class="text-secondary mb-4">
+          Start tracking your group expenses by adding your first expense.
+        </p>
+        <button class="btn btn-success" (click)="onAddExpense()">
+          ➕ Add First Expense
+        </button>
+      </div>
+    }
+  </div>
+</div>

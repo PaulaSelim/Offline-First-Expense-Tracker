@@ -1,0 +1,77 @@
+<div class="card bg-dark border-light mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center mb-2">
+          <i
+            [class]="selectedExpense()?.category || '' | categoryIcon"
+            class="me-2"
+          ></i>
+
+          <h2 class="text-white mb-0">{{ selectedExpense()?.title }}</h2>
+        </div>
+        <div class="d-flex align-items-center gap-3">
+          <span class="badge bg-secondary">{{
+            selectedExpense()?.category
+          }}</span>
+          <small class="text-secondary">
+            Created on {{ getFormattedDate(selectedExpense()?.date || "") }}
+          </small>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        @if (canEditExpense()) {
+          <button
+            class="btn btn-outline-warning btn-sm"
+            (click)="onEditExpense()"
+          >
+            ✏️ Edit
+          </button>
+          <button
+            class="btn btn-outline-danger btn-sm"
+            (click)="onDeleteExpense()"
+          >
+            🗑️ Delete
+          </button>
+        }
+        <button
+          class="btn btn-outline-secondary btn-sm"
+          (click)="onBackToExpenses()"
+        >
+          ← Back to Expenses
+        </button>
+      </div>
+    </div>
+
+    <div class="row text-center">
+      <div class="col-md-3">
+        <div class="border-end border-secondary">
+          <h4 class="text-success mb-1">
+            {{ getFormattedAmount(selectedExpense()?.amount || 0) }}
+          </h4>
+          <small class="text-secondary">Total Amount</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="border-end border-secondary">
+          <h5 class="text-white mb-1">{{ getTotalParticipants() }}</h5>
+          <small class="text-secondary">Participants</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="border-end border-secondary">
+          <h5 class="text-info mb-1">
+            {{ getFormattedAmount(calculateSplitAmount()) }}
+          </h5>
+          <small class="text-secondary">Per Person</small>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <h5 class="text-white mb-1">
+          {{ selectedExpense()?.payer?.username }}
+        </h5>
+        <small class="text-secondary">Paid By</small>
+      </div>
+    </div>
+  </div>
+</div>
