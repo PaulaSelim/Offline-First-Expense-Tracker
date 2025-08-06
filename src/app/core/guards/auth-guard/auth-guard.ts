@@ -7,6 +7,10 @@ export const authGuard: CanActivateFn = async () => {
 
   const authFacade: AuthFacade = inject(AuthFacade);
 
+  if (!window.navigator.onLine) {
+    return true;
+  }
+
   const isTokenValidGuard: boolean = await authFacade.isTokenValid();
   if (!isTokenValidGuard) {
     router.navigate(['/login']);
