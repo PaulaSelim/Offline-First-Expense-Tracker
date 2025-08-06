@@ -8,20 +8,29 @@
     </div>
   </div>
 } @else {
-  <app-card-shared [cardTitle]="'Add New Expense'" [cardIcon]="'💰'">
-    <app-expense-create-form
-      [form]="expenseForm"
-      [isInvalid]="isInvalid()"
-      [isSubmitting]="isSubmitting()"
-      [groupMembers]="groupMembers()"
-      [categories]="categories"
-      [selectedGroup]="selectedGroup()"
-      (submitForm)="onSubmit()"
-      (cancelForm)="onCancel()"
-      (participantToggle)="onParticipantToggle($event)"
-      (selectAllParticipants)="onSelectAllParticipants()"
-      (clearAllParticipants)="onClearAllParticipants()"
-      [isParticipantSelected]="isParticipantSelected.bind(this)"
-    />
-  </app-card-shared>
+  <div class="container-fluid pt-5 mt-4">
+    <div class="row justify-content-center">
+      <div class="col-12 col-md-10 col-lg-8 col-xl-6">
+        <app-card-shared
+          [cardTitle]="'Add New Expense'"
+          [cardIcon]="'bi bi-cash-coin text-success fs-4'"
+        >
+          <app-expense-create-form
+            [form]="expenseForm"
+            [isInvalid]="isInvalid()"
+            [isSubmitting]="isSubmitting()"
+            [groupMembers]="groupMembers()"
+            [categories]="categories"
+            [selectedGroup]="selectedGroup()"
+            (submitForm)="onSubmit()"
+            (cancelForm)="onCancel()"
+            (participantToggle)="onParticipantToggle($event)"
+            (selectAllParticipants)="onSelectAllParticipants()"
+            (clearAllParticipants)="onClearAllParticipants()"
+            [isParticipantSelected]="isParticipantSelected.bind(this)"
+          />
+        </app-card-shared>
+      </div>
+    </div>
+  </div>
 }

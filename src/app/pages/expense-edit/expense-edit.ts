@@ -24,6 +24,7 @@ import { Group, GroupMember } from '../../core/api/groupApi/groupApi.model';
 import {
   Expense,
   ExpenseUpdateRequest,
+  Participant,
 } from '../../core/api/expenseApi/expenseApi.model';
 import { categories, Category } from '../expense/expense.model';
 
@@ -127,10 +128,12 @@ export class ExpenseEdit implements OnInit {
       this.expenseForm.patchValue({
         title: expense.title,
         amount: expense.amount,
-        payer_id: expense.payer_id,
+        payer_id: expense.payer?.id || '',
         category: expense.category,
         date: expense.date,
-        participants_id: expense.participants || [],
+        participants_id: (expense.participants || []).map(
+          (p: Participant) => p.id,
+        ),
       });
     }
   }
