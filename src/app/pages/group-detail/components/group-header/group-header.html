@@ -1,0 +1,20 @@
+<div class="card h-100 border-1 shadow-sm bg-white mb-4">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-3">
+      <app-group-header-details
+        [name]="selectedGroup()?.name"
+        [description]="selectedGroup()?.description"
+      />
+      <app-group-header-actions
+        [isAdmin]="isAdmin()"
+        (edit)="onEditGroup()"
+        (delete)="onDeleteGroup()"
+      />
+    </div>
+    <app-group-header-stats
+      [memberCount]="selectedGroup()?.member_count"
+      [role]="selectedGroup()?.user_role"
+      [createdAt]="getFormattedDate(selectedGroup()?.created_at || '')"
+    />
+  </div>
+</div>

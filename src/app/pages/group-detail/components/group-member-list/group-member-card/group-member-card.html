@@ -1,0 +1,56 @@
+<div class="card h-100 border-1 shadow-sm bg-white">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <div class="d-flex align-items-center gap-2">
+        <div
+          class="rounded-circle bg-light d-flex align-items-center justify-content-center"
+          style="width: 44px; height: 44px"
+        >
+          <i class="bi bi-person text-secondary fs-3"></i>
+        </div>
+        <h6 class="fw-semibold text-dark mb-0">
+          {{ member().username || member().email }}
+        </h6>
+      </div>
+      <span
+        class="badge rounded-pill px-3 py-2 fw-normal"
+        [class.bg-warning]="member().role === GroupRole.ADMIN"
+        [class.bg-secondary]="member().role === GroupRole.MEMBER"
+      >
+        {{ member().role }}
+      </span>
+    </div>
+
+    <p class="card-text text-muted small mb-3">
+      <i class="bi bi-envelope me-1"></i>
+      {{ member().email }}
+    </p>
+
+    <div class="d-flex gap-3 mb-3">
+      <span class="text-muted small">Paid</span>
+      <span class="text-muted small">Share</span>
+      <span class="text-muted small">Balance</span>
+    </div>
+
+    <div class="d-flex justify-content-end align-items-center mt-auto">
+      @if (isAdmin()) {
+        <div class="btn-group btn-group-sm">
+          <button
+            class="btn btn-outline-info"
+            (click)="onToggleRole()"
+            title="Toggle Role"
+          >
+            <i class="bi bi-arrow-repeat me-1"></i>Role
+          </button>
+          <button
+            class="btn btn-outline-danger"
+            (click)="onRemove()"
+            title="Remove Member"
+          >
+            <i class="bi bi-x-lg me-1"></i>Remove
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+</div>

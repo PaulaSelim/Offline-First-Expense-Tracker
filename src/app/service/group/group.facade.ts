@@ -1,29 +1,29 @@
 import { computed, inject, Injectable, Signal } from '@angular/core';
+import { ToastrService } from 'ngx-toastr';
+import {
+  Group,
+  GroupListResponse,
+  GroupMember,
+  GroupMemberRequest,
+  GroupMemberResponse,
+  GroupRequest,
+  GroupResponse,
+  GroupRole,
+} from '../../core/api/groupApi/groupApi.model';
 import { GroupApiService } from '../../core/api/groupApi/groupApi.service';
 import {
-  GroupRequest,
-  GroupMemberRequest,
-  GroupRole,
-  Group,
-  GroupMember,
-  GroupResponse,
-  GroupListResponse,
-  GroupMemberResponse,
-} from '../../core/api/groupApi/groupApi.model';
-import {
-  setGroupLoading,
-  setGroupError,
-  setGroups,
-  setSelectedGroup,
-  setGroupMembers,
-  setGroupPagination,
-  groups,
   groupError,
   groupLoading,
-  selectedGroup,
   groupMembers,
+  groups,
+  selectedGroup,
+  setGroupError,
+  setGroupLoading,
+  setGroupMembers,
+  setGroupPagination,
+  setGroups,
+  setSelectedGroup,
 } from '../../core/state-management/group.state';
-import { ToastrService } from 'ngx-toastr';
 
 @Injectable({ providedIn: 'root' })
 export class GroupFacade {
@@ -174,6 +174,7 @@ export class GroupFacade {
       },
       error: () => {
         setGroupError('Failed to update role.');
+        this.fetchGroupMembers(groupId);
         this.toast.error('Could not change member role.');
       },
       complete: () => setGroupLoading(false),
