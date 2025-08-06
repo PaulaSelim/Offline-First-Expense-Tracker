@@ -25,7 +25,7 @@ import {
   Expense,
   ExpenseUpdateRequest,
 } from '../../core/api/expenseApi/expenseApi.model';
-import { Category } from '../expense/expense.model';
+import { categories, Category } from '../expense/expense.model';
 
 @Component({
   selector: 'app-expense-edit',
@@ -44,6 +44,8 @@ export class ExpenseEdit implements OnInit {
 
   isSubmitting: WritableSignal<boolean> = signal(false);
   isLoading: WritableSignal<boolean> = signal(true);
+
+  readonly categories: Category[] = categories;
 
   readonly selectedGroup: Signal<Group | null> =
     this.groupFacade.getSelectedGroup();
@@ -69,15 +71,6 @@ export class ExpenseEdit implements OnInit {
     date: ['', [Validators.required]],
     participants_id: [[], [Validators.required, Validators.minLength(1)]],
   });
-
-  readonly categories: Category[] = [
-    { id: 'Food', name: 'Food & Dining', icon: '🍽️' },
-    { id: 'Transport', name: 'Transportation', icon: '🚗' },
-    { id: 'Entertainment', name: 'Entertainment', icon: '🎬' },
-    { id: 'Utilities', name: 'Utilities', icon: '💡' },
-    { id: 'Healthcare', name: 'Healthcare', icon: '🏥' },
-    { id: 'other', name: 'Other', icon: '📦' },
-  ];
 
   get titleControl(): AbstractControl | null {
     return this.expenseForm.get('title');

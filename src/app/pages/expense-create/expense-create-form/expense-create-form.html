@@ -1,237 +1,33 @@
 <form class="form" [formGroup]="form()" (ngSubmit)="onSubmit()">
   <div class="container mt-4">
-    <!-- Expense Title -->
-    <div class="form-group mb-3">
-      <label class="form-label" for="title">Expense Title *</label>
-      <input
-        class="form-control"
-        type="text"
-        id="title"
-        placeholder="Enter expense description"
-        formControlName="title"
-        [class.is-invalid]="isInvalid()('title')"
-      />
-      @if (isInvalid()("title")) {
-        <div class="invalid-feedback">
-          <strong>Expense title is invalid:</strong>
-          <ul>
-            @if (form().get("title")?.errors?.["required"]) {
-              <li>Expense title is required.</li>
-            }
-            @if (form().get("title")?.errors?.["minlength"]) {
-              <li>Title must be at least 3 characters long.</li>
-            }
-            @if (form().get("title")?.errors?.["maxlength"]) {
-              <li>Title cannot exceed 100 characters.</li>
-            }
-          </ul>
-        </div>
-      }
-    </div>
+    <app-expense-title-input [form]="form()" [isInvalid]="isInvalid()" />
 
-    <!-- Amount and Date Row -->
-    <div class="row mb-3">
-      <div class="col-md-6">
-        <label class="form-label" for="amount">Amount *</label>
-        <div class="input-group">
-          <span class="input-group-text">$</span>
-          <input
-            class="form-control"
-            type="number"
-            id="amount"
-            placeholder="0.00"
-            step="0.01"
-            min="0.01"
-            max="999999.99"
-            formControlName="amount"
-            [class.is-invalid]="isInvalid()('amount')"
-          />
-        </div>
-        @if (isInvalid()("amount")) {
-          <div class="invalid-feedback d-block">
-            <strong>Amount is invalid:</strong>
-            <ul>
-              @if (form().get("amount")?.errors?.["required"]) {
-                <li>Amount is required.</li>
-              }
-              @if (form().get("amount")?.errors?.["min"]) {
-                <li>Amount must be greater than $0.00.</li>
-              }
-              @if (form().get("amount")?.errors?.["max"]) {
-                <li>Amount cannot exceed $999,999.99.</li>
-              }
-            </ul>
-          </div>
-        }
-      </div>
-      <div class="col-md-6">
-        <label class="form-label" for="date">Date *</label>
-        <input
-          class="form-control"
-          type="date"
-          id="date"
-          formControlName="date"
-          [class.is-invalid]="isInvalid()('date')"
-        />
-        @if (isInvalid()("date")) {
-          <div class="invalid-feedback">
-            <strong>Date is required.</strong>
-          </div>
-        }
-      </div>
-    </div>
+    <app-expense-amount-date-input [form]="form()" [isInvalid]="isInvalid()" />
 
-    <!-- Category Selection -->
-    <div class="form-group mb-3">
-      <label class="form-label">Category *</label>
-      <div class="row">
-        @for (category of categories(); track category.id) {
-          <div class="col-md-3 col-sm-4 col-6 mb-2">
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="radio"
-                [id]="'category-' + category.id"
-                [value]="category.id"
-                formControlName="category"
-              />
-              <label
-                class="form-check-label w-100"
-                [for]="'category-' + category.id"
-              >
-                <div class="card bg-secondary border-light h-100">
-                  <div class="card-body text-center py-2">
-                    <div class="mb-1">{{ category.icon }}</div>
-                    <small class="text-white">{{ category.name }}</small>
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-        }
-      </div>
-      @if (isInvalid()("category")) {
-        <div class="text-danger mt-2">
-          <small><strong>Please select a category.</strong></small>
-        </div>
-      }
-    </div>
+    <app-expense-category-selection
+      [form]="form()"
+      [isInvalid]="isInvalid()"
+      [categories]="categories()"
+    />
 
-    <!-- Payer Selection -->
-    <div class="form-group mb-3">
-      <label class="form-label" for="payer">Who Paid? *</label>
-      <select
-        class="form-select"
-        id="payer"
-        formControlName="payer_id"
-        [class.is-invalid]="isInvalid()('payer_id')"
-      >
-        <option value="">Select who paid for this expense</option>
-        @for (member of groupMembers(); track member.id) {
-          <option [value]="member.id">
-            {{ member.username || member.email }}
-          </option>
-        }
-      </select>
-      @if (isInvalid()("payer_id")) {
-        <div class="invalid-feedback">
-          <strong>Please select who paid for this expense.</strong>
-        </div>
-      }
-    </div>
+    <app-expense-payer-selection
+      [form]="form()"
+      [isInvalid]="isInvalid()"
+      [groupMembers]="groupMembers()"
+    />
 
-    <!-- Include Payer Checkbox -->
-    <div class="form-group mb-3">
-      <div class="form-check">
-        <input
-          class="form-check-input"
-          type="checkbox"
-          id="is_payer_included"
-          formControlName="is_payer_included"
-        />
-        <label class="form-check-label" for="is_payer_included">
-          Include payer in expense split
-        </label>
-      </div>
-      <small class="form-text text-muted">
-        Check this if the person who paid should also be included in splitting
-        the expense
-      </small>
-    </div>
+    <app-expense-payer-inclusion [form]="form()" />
 
-    <!-- Participants Selection -->
-    <div class="form-group mb-4">
-      <div class="d-flex justify-content-between align-items-center mb-2">
-        <label class="form-label mb-0">Who should split this expense? *</label>
-        <div>
-          <button
-            type="button"
-            class="btn btn-outline-primary btn-sm me-2"
-            (click)="onSelectAll()"
-          >
-            Select All
-          </button>
-          <button
-            type="button"
-            class="btn btn-outline-secondary btn-sm"
-            (click)="onClearAll()"
-          >
-            Clear All
-          </button>
-        </div>
-      </div>
+    <app-expense-participants-selection
+      [form]="form()"
+      [isInvalid]="isInvalid()"
+      [groupMembers]="groupMembers()"
+      [isParticipantSelected]="isParticipantSelected()"
+      (participantToggle)="onParticipantToggle($event)"
+      (selectAllParticipants)="onSelectAll()"
+      (clearAllParticipants)="onClearAll()"
+    />
 
-      <div class="row">
-        @for (member of groupMembers(); track member.id) {
-          <div class="col-md-6 mb-2">
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                [id]="'participant-' + member.id"
-                [checked]="isParticipantSelected()(member.id)"
-                (change)="onParticipantToggle(member.id)"
-              />
-              <label
-                class="form-check-label"
-                [for]="'participant-' + member.id"
-              >
-                <div class="d-flex align-items-center">
-                  <div class="me-2">
-                    @if (member.role === GroupRole.ADMIN) {
-                      <span class="badge bg-warning text-dark">Admin</span>
-                    } @else {
-                      <span class="badge bg-secondary">Member</span>
-                    }
-                  </div>
-                  <div>
-                    <div class="fw-bold">
-                      {{ member.username || member.email }}
-                    </div>
-                    @if (member.username) {
-                      <small class="text-muted">{{ member.email }}</small>
-                    }
-                  </div>
-                </div>
-              </label>
-            </div>
-          </div>
-        }
-      </div>
-
-      @if (isInvalid()("participants_id")) {
-        <div class="text-danger mt-2">
-          <small
-            ><strong
-              >Please select at least one participant to split the
-              expense.</strong
-            ></small
-          >
-        </div>
-      }
-    </div>
-
-    <!-- Action Buttons -->
     <div class="d-flex justify-content-between mb-3">
       <button
         type="button"
@@ -252,7 +48,7 @@
           </span>
           Creating Expense...
         } @else {
-          💰 Create Expense
+          <i class="bi bi-cash"> Add</i>
         }
       </button>
     </div>

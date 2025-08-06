@@ -15,12 +15,24 @@ import {
 } from '../../../core/api/groupApi/groupApi.model';
 import { Expense } from '../../../core/api/expenseApi/expenseApi.model';
 import { Category } from '../../expense/expense.model';
-
+import { ExpenseTitleInputComponent } from '../../../shared/expense-shared/expense-title-input-component/expense-title-input-component';
+import { ExpenseAmountDateInputComponent } from '../../../shared/expense-shared/expense-amount-date-input-component/expense-amount-date-input-component';
+import { ExpenseCategorySelectionComponent } from '../../../shared/expense-shared/expense-category-selection-component/expense-category-selection-component';
+import { ExpensePayerSelectionComponent } from '../../../shared/expense-shared/expense-payer-selection-component/expense-payer-selection-component';
+import { ExpenseParticipantsSelectionComponent } from '../../../shared/expense-shared/expense-participants-selection-component/expense-participants-selection-component';
 @Component({
   selector: 'app-expense-edit-form',
-  imports: [ReactiveFormsModule, CommonModule],
+  imports: [
+    ReactiveFormsModule,
+    CommonModule,
+    ExpenseTitleInputComponent,
+    ExpenseAmountDateInputComponent,
+    ExpenseCategorySelectionComponent,
+    ExpensePayerSelectionComponent,
+    ExpenseParticipantsSelectionComponent,
+  ],
   templateUrl: './expense-edit-form.html',
-  styleUrl: './expense-edit-form.scss',
+  styleUrls: ['./expense-edit-form.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExpenseEditForm {
@@ -35,7 +47,6 @@ export class ExpenseEditForm {
     input.required();
 
   readonly GroupRole: typeof GroupRole = GroupRole;
-
   submitForm: OutputEmitterRef<void> = output();
   cancelForm: OutputEmitterRef<void> = output();
   participantToggle: OutputEmitterRef<string> = output();
@@ -43,7 +54,11 @@ export class ExpenseEditForm {
   clearAllParticipants: OutputEmitterRef<void> = output();
 
   onSubmit(): void {
-    this.submitForm.emit();
+    if (this.form().valid) {
+      this.submitForm.emit();
+    } else {
+      this.form().markAllAsTouched();
+    }
   }
 
   onCancel(): void {
