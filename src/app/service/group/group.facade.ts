@@ -52,21 +52,19 @@ export class GroupFacade {
     setGroupLoading(true);
     setGroupError(null);
 
-    // Optimistically add to RxDB even if offline
-    this.groupDB
-      .addOrUpdateGroup$({
-        ...data,
-        id: crypto.randomUUID(), // Generate a temp ID if needed
-        created_by: '', // Fill as appropriate
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        member_count: 1, // Or default
-      })
-      .subscribe();
-
     if (!this.isOnline()) {
       setGroupError('Cannot create group while offline.');
       this.toast.error('You are offline.');
+      this.groupDB
+        .addOrUpdateGroup$({
+          ...data,
+          id: crypto.randomUUID(),
+          created_by: '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          member_count: 1,
+        })
+        .subscribe();
       setGroupLoading(false);
       return;
     }
@@ -75,8 +73,7 @@ export class GroupFacade {
       next: (res: GroupResponse) => {
         const group: Group = res.data.group;
 
-        // Optimistically add to RxDB
-        this.groupDB.addOrUpdateGroup$(group).subscribe(); // RxDB triggers stream that updates state
+        this.groupDB.addOrUpdateGroup$(group).subscribe();
 
         this.toast.success('Group created successfully!');
       },
@@ -92,7 +89,6 @@ export class GroupFacade {
     setGroupLoading(true);
     setGroupError(null);
 
-    // Always update state from RxDB
     this.groupDB.getAllGroups$().subscribe({
       next: (groups: Group[]) => setGroups(groups),
       error: () => {
@@ -106,17 +102,14 @@ export class GroupFacade {
       return;
     }
 
-    // If online, fetch from API and sync into RxDB
     this.groupApi.getGroups().subscribe({
       next: (res: GroupListResponse) => {
         const groupList: Group[] = res.data.groups;
 
-        // Save each group to RxDB
         groupList.forEach((group: Group) => {
-          this.groupDB.addOrUpdateGroup$(group).subscribe(); // Fire and forget
+          this.groupDB.addOrUpdateGroup$(group).subscribe();
         });
 
-        // Pagination sync (optional)
         setGroupPagination(res.data.pagination);
       },
       error: () => {
@@ -157,10 +150,10 @@ export class GroupFacade {
       next: (res: GroupResponse) => {
         const group: Group = res.data.group;
 
-        this.groupDB.addOrUpdateGroup$(group).subscribe(); // Sync to local
+        this.groupDB.addOrUpdateGroup$(group).subscribe();
 
         this.toast.success('Group updated successfully!');
-        setSelectedGroup(group); // Optimistic update
+        setSelectedGroup(group);
       },
       error: () => {
         setGroupError('Update failed.');
@@ -182,7 +175,7 @@ export class GroupFacade {
 
     this.groupApi.deleteGroup(groupId).subscribe({
       next: () => {
-        this.groupDB.removeGroupById$(groupId).subscribe(); // Sync local delete
+        this.groupDB.removeGroupById$(groupId).subscribe();
         this.toast.success('Group deleted.');
         setSelectedGroup(null);
       },
