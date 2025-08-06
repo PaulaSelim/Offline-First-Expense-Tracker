@@ -1,98 +1,70 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { RxCollection, RxDatabase, RxDocument } from 'rxdb';
-import { Observable, from } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { RxdbService } from '../rxdb.service';
 import { GroupDocument } from './group.schema';
 @Injectable({
   providedIn: 'root',
 })
 export class GroupDBState {
-  private rxdbService: RxdbService = inject(RxdbService);
+  private readonly rxdbService: RxdbService = inject(RxdbService);
 
-  async getCollectionAndDB(): Promise<{
-    groupCollection: RxCollection<GroupDocument>;
-  }> {
-    const db: RxDatabase = await this.rxdbService.database;
-    const groupCollection: RxCollection<GroupDocument> = db['groups'];
-    return { groupCollection };
-  }
-
-  async addOrUpdateGroup(group: GroupDocument): Promise<void> {
-    try {
-      const {
-        groupCollection,
-      }: { groupCollection: RxCollection<GroupDocument> } =
-        await this.getCollectionAndDB();
-      await groupCollection.upsert(group);
-      console.error('Group stored in RxDB:', group);
-    } catch (error) {
-      console.error('Error storing group in RxDB:', error);
-    }
-  }
-
-  async getAllGroups(): Promise<GroupDocument[]> {
-    try {
-      const {
-        groupCollection,
-      }: { groupCollection: RxCollection<GroupDocument> } =
-        await this.getCollectionAndDB();
-      const groups: RxDocument<GroupDocument>[] = await groupCollection
-        .find()
-        .exec();
-      return groups.map((doc: RxDocument<GroupDocument>) => doc.toJSON());
-    } catch (error) {
-      console.error('Error fetching groups from RxDB:', error);
-      return [];
-    }
-  }
-
-  async getGroupById(id: string): Promise<GroupDocument | null> {
-    try {
-      const {
-        groupCollection,
-      }: { groupCollection: RxCollection<GroupDocument> } =
-        await this.getCollectionAndDB();
-      const groupDoc: RxDocument<GroupDocument> | null = await groupCollection
-        .findOne({ selector: { id } })
-        .exec();
-      return groupDoc ? groupDoc.toJSON() : null;
-    } catch (error) {
-      console.error('Error fetching group by id from RxDB:', error);
-      return null;
-    }
-  }
-
-  async removeGroupById(id: string): Promise<void> {
-    try {
-      const {
-        groupCollection,
-      }: { groupCollection: RxCollection<GroupDocument> } =
-        await this.getCollectionAndDB();
-      const groupDoc: RxDocument<GroupDocument> | null = await groupCollection
-        .findOne({ selector: { id } })
-        .exec();
-      if (groupDoc) {
-        await groupDoc.remove();
-        console.error(`Group with id ${id} removed from RxDB`);
-      }
-    } catch (error) {
-      console.error('Error removing group from RxDB:', error);
-    }
+  private getCollection$(): Observable<RxCollection<GroupDocument>> {
+    return from(this.rxdbService.database).pipe(
+      map(
+        (db: RxDatabase) =>
+          db.collections['groups'] as RxCollection<GroupDocument>,
+      ),
+    );
   }
 
   getAllGroups$(): Observable<GroupDocument[]> {
-    return from(this.getAllGroups());
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<GroupDocument>) =>
+        collection
+          .find({ selector: {} })
+          .$.pipe(
+            map((docs: RxDocument<GroupDocument>[]) =>
+              docs.map((d: RxDocument<GroupDocument>) => d.toJSON()),
+            ),
+          ),
+      ),
+    );
   }
 
   getGroupById$(id: string): Observable<GroupDocument | null> {
-    return from(this.getGroupById(id));
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<GroupDocument>) =>
+        collection
+          .findOne({ selector: { id } })
+          .$.pipe(
+            map((doc: RxDocument<GroupDocument> | null) =>
+              doc ? doc.toJSON() : null,
+            ),
+          ),
+      ),
+    );
   }
 
   addOrUpdateGroup$(group: GroupDocument): Observable<void> {
-    return from(this.addOrUpdateGroup(group));
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<GroupDocument>) =>
+        from(collection.upsert(group)).pipe(map(() => void 0)),
+      ),
+    );
   }
 
   removeGroupById$(id: string): Observable<void> {
-    return from(this.removeGroupById(id));
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<GroupDocument>) =>
+        collection
+          .findOne({ selector: { id } })
+          .$.pipe(
+            switchMap((doc: RxDocument<GroupDocument> | null) =>
+              doc ? from(doc.remove()).pipe(map(() => void 0)) : from([void 0]),
+            ),
+          ),
+      ),
+    );
   }
 }

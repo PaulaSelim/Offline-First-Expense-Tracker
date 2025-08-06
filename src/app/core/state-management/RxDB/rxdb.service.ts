@@ -17,7 +17,7 @@ export class RxdbService {
 
   private async initDatabase(): Promise<RxDatabase> {
     const db: RxDatabase = await createRxDatabase({
-      name: 'appDB',
+      name: 'appDB-v0.1',
       storage: getRxStorageLocalstorage(),
       multiInstance: false,
     });
