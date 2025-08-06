@@ -66,12 +66,12 @@ export class ExpenseCreate implements OnInit {
   });
 
   readonly categories: Category[] = [
-    { id: 'Food', name: 'Food & Dining', icon: '🍽️' },
-    { id: 'Transport', name: 'Transportation', icon: '🚗' },
-    { id: 'Entertainment', name: 'Entertainment', icon: '🎬' },
-    { id: 'Utilities', name: 'Utilities', icon: '💡' },
-    { id: 'Healthcare', name: 'Healthcare', icon: '🏥' },
-    { id: 'other', name: 'Other', icon: '📦' },
+    { id: 'Food', name: 'Food & Dining', icon: 'bi bi-egg-fried' },
+    { id: 'Transport', name: 'Transportation', icon: 'bi bi-truck' },
+    { id: 'Entertainment', name: 'Entertainment', icon: 'bi bi-film' },
+    { id: 'Utilities', name: 'Utilities', icon: 'bi bi-lightbulb-fill' },
+    { id: 'Healthcare', name: 'Healthcare', icon: 'bi bi-hospital-fill' },
+    { id: 'other', name: 'Other', icon: 'bi bi-box' },
   ];
 
   get titleControl(): AbstractControl | null {
