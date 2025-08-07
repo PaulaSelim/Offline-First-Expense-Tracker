@@ -5,16 +5,16 @@ import {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError, from } from 'rxjs';
+import { catchError, switchMap, throwError, from, tap } from 'rxjs';
 import { TokenState } from '../services/token.state';
-import { AuthFacade } from '../../service/auth/auth.facade';
+import { AuthApiService } from '../../core/api/authApi/authApi.service';
 
 export const AuthInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ) => {
   const tokenState: TokenState = inject(TokenState);
-  const authFacade: AuthFacade = inject(AuthFacade);
+  const authApiService: AuthApiService = inject(AuthApiService);
 
   const accessToken: string | null = tokenState.getAccessToken();
   const refreshToken: string | null = tokenState.getRefreshToken();
@@ -37,13 +37,14 @@ export const AuthInterceptor: HttpInterceptorFn = (
         refreshToken &&
         messageContainsToken
       ) {
-        return from(authFacade.refreshToken(refreshToken)).pipe(
+        return from(authApiService.refreshToken(refreshToken)).pipe(
+          tap((res: { token: string; refresh_token: string }) => {
+            tokenState.setAccessToken(res.token);
+            tokenState.setRefreshToken(res.refresh_token);
+          }),
           switchMap(() => {
             const newAccessToken: string | null = tokenState.getAccessToken();
-
-            if (!newAccessToken) {
-              return throwError(() => error);
-            }
+            if (!newAccessToken) return throwError(() => error);
 
             const retryReq: HttpRequest<unknown> = req.clone({
               setHeaders: { Authorization: `Bearer ${newAccessToken}` },

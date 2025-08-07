@@ -26,33 +26,53 @@ import {
   userName,
 } from '../../core/state-management/auth.state';
 import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
+import { isAppOnline } from '../../core/state-management/sync.state';
+import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
+import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);
+  private syncApi: SyncApiService = inject(SyncApiService);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly tokenState: TokenState = inject(TokenState);
+  private readonly rxdbService: RxdbService = inject(RxdbService);
   private router: Router = inject(Router);
   readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   private readonly userDB: UserDBState = inject(UserDBState);
-
-  isOnline(): boolean {
-    return window.navigator.onLine;
-  }
+  private readonly _isAppOnline: Signal<boolean> = computed(() =>
+    isAppOnline(),
+  );
 
   login(data: LoginRequest): void {
     setAuthLoading(true);
     setAuthError(null);
 
     this.api.login(data).subscribe({
-      next: (res: AuthenticationResponse) => {
+      next: async (res: AuthenticationResponse) => {
         const user: User = res.data.user;
         setAuthData(res);
         this.tokenState.setTokens(res.data.token, res.data.refresh_token);
 
-        this.userDB.addOrUpdateUser$(user).subscribe();
+        try {
+          await new Promise<void>(
+            (resolve: () => void, reject: (reason?: unknown) => void) => {
+              this.userDB.addOrUpdateUser$(user).subscribe({
+                next: () => resolve(),
+                error: (error: unknown) => reject(error),
+              });
+            },
+          );
 
-        this.toast.success('Login successful!');
-        this.router.navigate([ROUTER_LINKS.DASHBOARD]);
+          this.toast.success('Login successful!');
+
+          setTimeout(() => {
+            this.router.navigate([ROUTER_LINKS.DASHBOARD]);
+          }, 100);
+        } catch (error) {
+          console.error('Error saving user to database:', error);
+          this.toast.success('Login successful!');
+          this.router.navigate([ROUTER_LINKS.DASHBOARD]);
+        }
       },
       error: () => {
         setAuthError('Invalid username or password');
@@ -75,7 +95,7 @@ export class AuthFacade {
         this.userDB.addOrUpdateUser$(user).subscribe();
 
         this.toast.success('Registration successful!');
-        this.router.navigate([ROUTER_LINKS.DASHBOARD]);
+        this.router.navigate([ROUTER_LINKS.LOGIN]);
       },
       error: () => {
         setAuthError('Registration failed. Try again.');
@@ -132,7 +152,7 @@ export class AuthFacade {
     this.userDB.removeUser$().pipe(take(1)).subscribe();
     this.tokenState.clearTokens();
     resetAuthState();
-
+    this.rxdbService.clearMyDatabase();
     this.toast.success('Logout successful!');
     this.router.navigate([ROUTER_LINKS.LOGIN]);
   }
@@ -179,59 +199,110 @@ export class AuthFacade {
     }
   }
 
+  isTokenValid(): Promise<boolean> {
+    return new Promise((resolve: (value: boolean) => void) => {
+      this.syncApi.ping().subscribe({
+        next: (status: 'healthy' | 'unhealthy' | 'dead') => {
+          switch (status) {
+            case 'healthy':
+              this.api.getProfile().subscribe({
+                next: (user: User) => {
+                  this.setProfile(user);
+                  this.userDB.addOrUpdateUser$(user).pipe(take(1)).subscribe();
+                  resolve(true);
+                },
+                error: () => {
+                  this.setError('Failed to fetch user profile.');
+                  resolve(false);
+                },
+              });
+              break;
+
+            case 'unhealthy':
+              resolve(false);
+              break;
+
+            case 'dead':
+              this.loadProfileFromCache()
+                .then((success: boolean) => {
+                  resolve(success);
+                })
+                .catch(() => {
+                  resolve(false);
+                });
+              break;
+          }
+        },
+        error: () => {
+          this.loadProfileFromCache()
+            .then((success: boolean) => {
+              resolve(success);
+            })
+            .catch(() => {
+              resolve(false);
+            });
+        },
+      });
+    });
+  }
+
+  private async loadProfileFromCache(): Promise<boolean> {
+    return new Promise((resolve: (value: boolean) => void) => {
+      this.userDB
+        .getUser$()
+        .pipe(take(1))
+        .subscribe({
+          next: (user: User | null) => {
+            if (user) {
+              this.setProfile(user);
+              this.toast.info('Using cached profile (offline mode)');
+              resolve(true);
+            } else {
+              this.toast.warning('No offline profile data available');
+              resolve(false);
+            }
+          },
+          error: () => {
+            this.toast.error('Failed to load cached profile');
+            resolve(false);
+          },
+        });
+    });
+  }
+
   getProfile(): void {
     setAuthLoading(true);
     setAuthError(null);
 
-    if (!this.isOnline()) {
-      const uid: string | null = this.getCurrentUserId().toString();
-      if (!uid) {
-        this.toast.error('Offline and no user ID available.');
-        setAuthLoading(false);
-        return;
-      }
+    const online: boolean = this._isAppOnline();
 
-      this.userDB.getUser$().subscribe({
-        next: (user: User | null) => {
-          if (user) {
-            this.setProfile(user);
-            this.toast.info('Loaded user from offline cache.');
-          } else {
-            this.toast.warning('User not found in offline cache.');
+    if (!online) {
+      this.loadProfileFromCache()
+        .then((success: boolean) => {
+          if (!success) {
+            this.setError('No offline profile data available');
           }
-        },
-        error: () => this.toast.error('Failed to load offline profile.'),
-        complete: () => setAuthLoading(false),
-      });
-
+        })
+        .finally(() => {
+          setAuthLoading(false);
+        });
       return;
     }
 
     this.api.getProfile().subscribe({
       next: (user: User) => {
         this.setProfile(user);
-        this.userDB.addOrUpdateUser$(user).subscribe();
+        this.userDB.addOrUpdateUser$(user).pipe(take(1)).subscribe();
       },
       error: () => {
-        this.setError('Failed to fetch user profile.');
-        this.toast.error('Could not fetch profile.');
+        this.loadProfileFromCache().then((success: boolean) => {
+          if (!success) {
+            this.setError('Failed to fetch user profile.');
+            this.toast.error('Could not fetch profile.');
+          }
+        });
       },
       complete: () => setAuthLoading(false),
-    });
-  }
-
-  isTokenValid(): Promise<boolean> {
-    return new Promise((resolve: (value: boolean) => void) => {
-      this.api.getProfile().subscribe({
-        next: (user: User) => {
-          this.setProfile(user);
-          resolve(true);
-        },
-        error: () => {
-          this.setError('Failed to fetch user profile.');
-          resolve(false);
-        },
-      });
     });
   }
 }

@@ -23,6 +23,7 @@ import { GroupFacade } from '../../service/group/group.facade';
 import { Group, GroupMember } from '../../core/api/groupApi/groupApi.model';
 import { ExpenseRequest } from '../../core/api/expenseApi/expenseApi.model';
 import { Category } from '../expense/expense.model';
+import { AuthFacade } from '../../service/auth/auth.facade';
 
 @Component({
   selector: 'app-expense-create',
@@ -34,6 +35,7 @@ import { Category } from '../expense/expense.model';
 })
 export class ExpenseCreate implements OnInit {
   private readonly expenseFacade: ExpenseFacade = inject(ExpenseFacade);
+  private readonly authFacade: AuthFacade = inject(AuthFacade);
   private readonly groupFacade: GroupFacade = inject(GroupFacade);
   private readonly router: Router = inject(Router);
   private readonly route: ActivatedRoute = inject(ActivatedRoute);

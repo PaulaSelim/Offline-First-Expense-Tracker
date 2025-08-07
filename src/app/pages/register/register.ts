@@ -60,7 +60,6 @@ export class Register {
       const { username, email, password }: RegisterRequest = this.form.value;
       this.authFacade.register({ username, email, password });
       this.form.reset();
-      this.router.navigate(['/login']);
     }
   }
 

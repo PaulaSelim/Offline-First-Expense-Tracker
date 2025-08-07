@@ -34,4 +34,14 @@ export class RxdbService {
   get database(): Promise<RxDatabase> {
     return this.dbPromise;
   }
+
+  async clearMyDatabase(): Promise<void> {
+    const db: RxDatabase = await this.database;
+    try {
+      await db['groups'].remove();
+      await db['expenses'].remove();
+    } catch (error) {
+      console.error('Error clearing collections:', error);
+    }
+  }
 }

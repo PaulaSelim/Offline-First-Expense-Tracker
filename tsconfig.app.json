@@ -8,7 +8,7 @@
   },
   "include": [
     "src/**/*.ts"
-  ],
+, "src/app/core/api/syncApi"  ],
   "exclude": [
     "src/**/*.spec.ts"
   ]
