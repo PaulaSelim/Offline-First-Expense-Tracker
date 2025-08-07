@@ -93,11 +93,7 @@ export class AuthFacade {
 
     this.api.register(data).subscribe({
       next: (res: AuthenticationResponse) => {
-        const user: User = res.data.user;
         setAuthData(res);
-        this.tokenState.setTokens(res.data.token, res.data.refresh_token);
-
-        this.userDB.addOrUpdateUser$(user).subscribe();
 
         this.toast.success('Registration successful!');
         this.router.navigate([ROUTER_LINKS.LOGIN]);
