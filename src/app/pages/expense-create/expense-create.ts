@@ -63,7 +63,7 @@ export class ExpenseCreate implements OnInit {
     payer_id: ['', [Validators.required]],
     category: ['', [Validators.required]],
     date: [new Date().toISOString().split('T')[0], [Validators.required]],
-    is_payer_included: [true],
+    is_payer_included: [true, [Validators.required]],
     participants_id: [[], [Validators.required, Validators.minLength(1)]],
   });
 
@@ -72,7 +72,6 @@ export class ExpenseCreate implements OnInit {
     { id: 'Transport', name: 'Transportation', icon: 'bi bi-truck' },
     { id: 'Entertainment', name: 'Entertainment', icon: 'bi bi-film' },
     { id: 'Utilities', name: 'Utilities', icon: 'bi bi-lightbulb-fill' },
-    { id: 'Healthcare', name: 'Healthcare', icon: 'bi bi-hospital-fill' },
     { id: 'other', name: 'Other', icon: 'bi bi-box' },
   ];
 

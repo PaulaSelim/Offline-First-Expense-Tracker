@@ -46,65 +46,55 @@ export class GroupFacade {
     groupMembers(),
   );
 
+  readonly isOnline: () => Promise<boolean> = async () => {
+    return this.syncFacade.isBackendAlive();
+  };
+
   getGroups(): Signal<Group[]> {
     return this._groups;
   }
 
-  private readonly isBackendAlive: () => Promise<boolean> = () =>
-    this.syncFacade.isBackendAlive();
-
-  private refreshLocalGroups(): void {
-    this.groupDB
-      .getAllGroups$()
-      .pipe(take(1))
-      .subscribe({
-        next: (localGroups: Group[]) => {
-          setGroups(localGroups);
+  async getLocalGroups(): Promise<Group[]> {
+    return await Promise.race([
+      new Promise<Group[]>(
+        (
+          resolve: (value: Group[]) => void,
+          reject: (reason?: unknown) => void,
+        ) => {
+          this.groupDB
+            .getAllGroups$()
+            .pipe(take(1))
+            .subscribe({
+              next: (groups: Group[]) => resolve(groups || []),
+              error: (error: unknown) => reject(error),
+            });
         },
-        error: () => {
-          this.toast.error('Failed to load local groups.');
-        },
-      });
+      ),
+      new Promise<Group[]>((_: unknown, reject: (reason?: unknown) => void) =>
+        setTimeout(() => reject(new Error('Database timeout')), 2000),
+      ),
+    ]);
   }
-
   async fetchGroups(): Promise<void> {
     setGroupLoading(true);
     setGroupError(null);
 
     try {
       let localGroups: Group[] = [];
-
       try {
-        localGroups = await Promise.race([
-          new Promise<Group[]>(
-            (
-              resolve: (value: Group[]) => void,
-              reject: (reason?: unknown) => void,
-            ) => {
-              this.groupDB
-                .getAllGroups$()
-                .pipe(take(1))
-                .subscribe({
-                  next: (groups: Group[]) => resolve(groups || []),
-                  error: (error: unknown) => reject(error),
-                });
-            },
-          ),
-          new Promise<Group[]>(
-            (_: unknown, reject: (reason?: unknown) => void) =>
-              setTimeout(() => reject(new Error('Database timeout')), 2000),
-          ),
-        ]);
+        localGroups = await this.getLocalGroups();
       } catch (error: unknown) {
-        const err: Error = error as Error;
-        setGroupError(err.message || 'Failed to load local groups');
+        this.handleGroupError(error, 'Failed to load local groups');
       }
 
       setGroups(localGroups);
+      if (localGroups.length > 0) {
+        setGroupLoading(false);
+        return;
+      }
 
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
+        this.toast.info('Using cached groups (offline mode)');
         setGroupLoading(false);
         return;
       }
@@ -116,62 +106,43 @@ export class GroupFacade {
           next: (res: GroupListResponse) => {
             const serverGroups: Group[] = res.data.groups;
 
-            this.syncGroupsToDatabase(serverGroups);
+            serverGroups.forEach((group: Group) => {
+              try {
+                this.groupDB.addOrUpdateGroup$(group).pipe(take(1)).subscribe();
+              } catch (error: unknown) {
+                this.handleGroupError(error, 'Failed to sync group');
+              }
+            });
 
             setGroups(serverGroups);
             setGroupPagination(res.data.pagination);
             setGroupLoading(false);
           },
           error: () => {
-            if (localGroups.length === 0) {
-              setGroupError('Failed to load groups');
-              this.toast.error('Could not load groups');
-            } else {
-              this.toast.info('Using cached groups (offline mode)');
-            }
+            this.toast.info('Using cached groups (offline mode)');
             setGroupLoading(false);
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to load groups');
     }
   }
 
-  private syncGroupsToDatabase(groups: Group[]): void {
-    groups.forEach((group: Group) => {
-      try {
-        this.groupDB.addOrUpdateGroup$(group).pipe(take(1)).subscribe();
-      } catch (error: unknown) {
-        const err: Error = error as Error;
-        setGroupError(err.message || 'Failed to load local groups');
-      }
-    });
-  }
   async fetchGroupById(groupId: string): Promise<void> {
     setGroupLoading(true);
     setGroupError(null);
 
     try {
-      const localGroup: Group | null = await new Promise<Group | null>(
-        (resolve: (value: Group | null) => void) => {
-          this.groupDB
-            .getGroupById$(groupId)
-            .pipe(take(1))
-            .subscribe({
-              next: (group: Group | null) => resolve(group),
-              error: () => resolve(null),
-            });
-        },
+      const localGroup: Group | null = await this.getLocalGroups().then(
+        (groups: Group[]) =>
+          groups.find((g: Group) => g.id === groupId) ?? null,
       );
 
       if (localGroup) {
         setSelectedGroup(localGroup);
       }
 
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
         setGroupLoading(false);
         return;
       }
@@ -199,8 +170,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to load group');
     }
   }
 
@@ -222,10 +192,45 @@ export class GroupFacade {
       .addOrUpdateGroup$(localGroup)
       .pipe(take(1))
       .subscribe({
-        next: () => {
+        next: async () => {
           this.toast.success('Group created locally!');
-          this.refreshLocalGroups();
-          this.syncCreateGroup(data, localGroup.id);
+          this.fetchGroups();
+          if (!(await this.isOnline())) {
+            setGroupLoading(false);
+            return;
+          }
+
+          this.groupApi
+            .createGroup(data)
+            .pipe(take(1))
+            .subscribe({
+              next: (res: GroupResponse) => {
+                const serverGroup: Group = res.data.group;
+
+                this.groupDB
+                  .removeGroupById$(localGroup.id)
+                  .pipe(
+                    switchMap(() =>
+                      this.groupDB.addOrUpdateGroup$(serverGroup),
+                    ),
+                    take(1),
+                  )
+                  .subscribe(() => {
+                    this.fetchGroups();
+                    this.toast.success('Group synced with server!');
+                    setGroupLoading(false);
+                  });
+              },
+              error: () => {
+                this.toast.warning(
+                  'Group saved locally, will sync when online',
+                );
+                setGroupLoading(false);
+              },
+              complete: () => {
+                this.fetchGroups();
+              },
+            });
         },
         error: () => {
           this.toast.error('Failed to create group locally');
@@ -234,67 +239,14 @@ export class GroupFacade {
       });
   }
 
-  private async syncCreateGroup(
-    data: GroupRequest,
-    localId: string,
-  ): Promise<void> {
-    try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
-        setGroupLoading(false);
-        return;
-      }
-
-      this.groupApi
-        .createGroup(data)
-        .pipe(take(1))
-        .subscribe({
-          next: (res: GroupResponse) => {
-            const serverGroup: Group = res.data.group;
-
-            this.groupDB
-              .removeGroupById$(localId)
-              .pipe(
-                switchMap(() => this.groupDB.addOrUpdateGroup$(serverGroup)),
-                take(1),
-              )
-              .subscribe(() => {
-                this.refreshLocalGroups();
-                this.toast.success('Group synced with server!');
-                setGroupLoading(false);
-              });
-          },
-          error: () => {
-            this.toast.warning('Group saved locally, will sync when online');
-            setGroupLoading(false);
-          },
-          complete: () => {
-            this.fetchGroups();
-          },
-        });
-    } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to sync group creation');
-      setGroupLoading(false);
-    }
-  }
-
   async updateGroup(groupId: string, data: GroupRequest): Promise<void> {
     setGroupLoading(true);
     setGroupError(null);
 
     try {
-      const currentGroup: Group | null = await new Promise<Group | null>(
-        (resolve: (value: Group | null) => void) => {
-          this.groupDB
-            .getGroupById$(groupId)
-            .pipe(take(1))
-            .subscribe({
-              next: (group: Group | null) => resolve(group),
-              error: () => resolve(null),
-            });
-        },
+      const currentGroup: Group | null = await this.getLocalGroups().then(
+        (groups: Group[]) =>
+          groups.find((g: Group) => g.id === groupId) ?? null,
       );
 
       if (!currentGroup) {
@@ -313,12 +265,42 @@ export class GroupFacade {
         .addOrUpdateGroup$(updatedGroup)
         .pipe(take(1))
         .subscribe({
-          next: () => {
+          next: async () => {
             setSelectedGroup(updatedGroup);
-            this.refreshLocalGroups();
+            this.fetchGroups();
             this.toast.success('Group updated locally!');
+            if (!(await this.isOnline())) {
+              setGroupLoading(false);
+              return;
+            }
 
-            this.syncUpdateGroup(groupId, data);
+            this.groupApi
+              .updateGroup(groupId, data)
+              .pipe(take(1))
+              .subscribe({
+                next: (res: GroupResponse) => {
+                  const serverGroup: Group = res.data.group;
+                  setSelectedGroup(serverGroup);
+
+                  this.groupDB
+                    .addOrUpdateGroup$(serverGroup)
+                    .pipe(take(1))
+                    .subscribe(() => {
+                      this.fetchGroups();
+                      this.toast.success('Group synced with server!');
+                      setGroupLoading(false);
+                    });
+                },
+                error: () => {
+                  this.toast.warning(
+                    'Group updated locally, will sync when online',
+                  );
+                  setGroupLoading(false);
+                },
+                complete: () => {
+                  this.fetchGroups();
+                },
+              });
           },
           error: () => {
             this.toast.error('Failed to update group locally');
@@ -326,51 +308,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
-    }
-  }
-
-  private async syncUpdateGroup(
-    groupId: string,
-    data: GroupRequest,
-  ): Promise<void> {
-    try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
-        setGroupLoading(false);
-        return;
-      }
-
-      this.groupApi
-        .updateGroup(groupId, data)
-        .pipe(take(1))
-        .subscribe({
-          next: (res: GroupResponse) => {
-            const serverGroup: Group = res.data.group;
-            setSelectedGroup(serverGroup);
-
-            this.groupDB
-              .addOrUpdateGroup$(serverGroup)
-              .pipe(take(1))
-              .subscribe(() => {
-                this.refreshLocalGroups();
-                this.toast.success('Group synced with server!');
-                setGroupLoading(false);
-              });
-          },
-          error: () => {
-            this.toast.warning('Group updated locally, will sync when online');
-            setGroupLoading(false);
-          },
-          complete: () => {
-            this.fetchGroups();
-          },
-        });
-    } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to load local groups');
     }
   }
 
@@ -383,12 +321,33 @@ export class GroupFacade {
         .removeGroupById$(groupId)
         .pipe(take(1))
         .subscribe({
-          next: () => {
+          next: async () => {
             setSelectedGroup(null);
-            this.refreshLocalGroups();
+            this.fetchGroups();
             this.toast.success('Group deleted locally!');
+            if (!(await this.isOnline())) {
+              setGroupLoading(false);
+              return;
+            }
 
-            this.syncDeleteGroup(groupId);
+            this.groupApi
+              .deleteGroup(groupId)
+              .pipe(take(1))
+              .subscribe({
+                next: () => {
+                  this.toast.success('Group deletion synced with server!');
+                  setGroupLoading(false);
+                },
+                error: () => {
+                  this.toast.warning(
+                    'Group deleted locally, will sync deletion when online',
+                  );
+                  setGroupLoading(false);
+                },
+                complete: () => {
+                  this.fetchGroups();
+                },
+              });
           },
           error: () => {
             this.toast.error('Failed to delete group locally');
@@ -396,41 +355,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
-    }
-  }
-
-  private async syncDeleteGroup(groupId: string): Promise<void> {
-    try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
-        setGroupLoading(false);
-        return;
-      }
-
-      this.groupApi
-        .deleteGroup(groupId)
-        .pipe(take(1))
-        .subscribe({
-          next: () => {
-            this.toast.success('Group deletion synced with server!');
-            setGroupLoading(false);
-          },
-          error: () => {
-            this.toast.warning(
-              'Group deleted locally, will sync deletion when online',
-            );
-            setGroupLoading(false);
-          },
-          complete: () => {
-            this.fetchGroups();
-          },
-        });
-    } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to load local groups');
     }
   }
 
@@ -438,9 +363,7 @@ export class GroupFacade {
     setGroupLoading(true);
     setGroupError(null);
     try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
         this.toast.info('Member data unavailable offline');
         const currentUser: User | null = this.authFacade.getCurrentUser()();
         if (currentUser) {
@@ -474,8 +397,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to load group members');
     }
   }
 
@@ -484,9 +406,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
         this.toast.error('Cannot add members while offline');
         setGroupLoading(false);
         return;
@@ -507,8 +427,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to add member');
     }
   }
 
@@ -521,9 +440,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
         this.toast.error('Cannot update member roles while offline');
         setGroupLoading(false);
         return;
@@ -544,8 +461,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to update member role');
     }
   }
 
@@ -554,9 +470,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      const isOnline: boolean = await this.isBackendAlive();
-
-      if (!isOnline) {
+      if (!(await this.isOnline())) {
         this.toast.error('Cannot remove members while offline');
         setGroupLoading(false);
         return;
@@ -577,8 +491,7 @@ export class GroupFacade {
           },
         });
     } catch (error: unknown) {
-      const err: Error = error as Error;
-      setGroupError(err.message || 'Failed to load local groups');
+      this.handleGroupError(error, 'Failed to remove member');
     }
   }
 
@@ -604,5 +517,12 @@ export class GroupFacade {
 
   getGroupMembers(): Signal<GroupMember[]> {
     return this._groupMembers;
+  }
+
+  handleGroupError(error: unknown, defaultMessage: string): void {
+    const err: Error = error as Error;
+    setGroupError(err.message || defaultMessage);
+    this.toast.error(err.message || defaultMessage);
+    this.setLoading(false);
   }
 }

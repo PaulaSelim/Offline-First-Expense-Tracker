@@ -34,7 +34,7 @@ export class SyncApiService {
     return this.http
       .get<{ data: { status: string } }>(`${environment.apiUrl}/health`)
       .pipe(
-        timeout(500),
+        timeout(100),
         map((res: { data: { status: string } }) => {
           return res.data?.status === 'ok'
             ? HealthStatus.Healthy

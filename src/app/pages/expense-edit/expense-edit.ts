@@ -70,6 +70,7 @@ export class ExpenseEdit implements OnInit {
     payer_id: ['', [Validators.required]],
     category: ['', [Validators.required]],
     date: ['', [Validators.required]],
+    is_payer_included: [true, [Validators.required]],
     participants_id: [[], [Validators.required, Validators.minLength(1)]],
   });
 
@@ -135,6 +136,7 @@ export class ExpenseEdit implements OnInit {
         payer_id: expense.payer_id,
         category: expense.category,
         date: expense.date,
+        is_payer_included: expense.is_payer_included,
         participants_id: participantIds,
       });
     }
@@ -150,6 +152,7 @@ export class ExpenseEdit implements OnInit {
         payer_id: this.expenseForm.value.payer_id,
         category: this.expenseForm.value.category,
         date: this.expenseForm.value.date,
+        is_payer_included: this.expenseForm.value.is_payer_included,
         participants_id: this.expenseForm.value.participants_id,
       };
 

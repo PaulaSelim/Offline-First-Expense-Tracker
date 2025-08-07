@@ -20,6 +20,7 @@ import { ExpenseAmountDateInputComponent } from '../../../shared/expense-shared/
 import { ExpenseCategorySelectionComponent } from '../../../shared/expense-shared/expense-category-selection-component/expense-category-selection-component';
 import { ExpensePayerSelectionComponent } from '../../../shared/expense-shared/expense-payer-selection-component/expense-payer-selection-component';
 import { ExpenseParticipantsSelectionComponent } from '../../../shared/expense-shared/expense-participants-selection-component/expense-participants-selection-component';
+import { ExpensePayerInclusionComponent } from '../../../shared/expense-shared/expense-payer-inclusion-component/expense-payer-inclusion-component';
 @Component({
   selector: 'app-expense-edit-form',
   imports: [
@@ -30,6 +31,7 @@ import { ExpenseParticipantsSelectionComponent } from '../../../shared/expense-s
     ExpenseCategorySelectionComponent,
     ExpensePayerSelectionComponent,
     ExpenseParticipantsSelectionComponent,
+    ExpensePayerInclusionComponent,
   ],
   templateUrl: './expense-edit-form.html',
   styleUrls: ['./expense-edit-form.scss'],
