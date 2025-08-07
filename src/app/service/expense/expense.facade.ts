@@ -1,6 +1,5 @@
 import { computed, inject, Injectable, Signal } from '@angular/core';
 import { ExpenseApiService } from '../../core/api/expenseApi/expenseApi.service';
-import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
 import {
   ExpenseRequest,
   ExpenseListResponse,
@@ -32,6 +31,7 @@ import {
   removeFetchedGroup,
   clearFetchedGroups,
 } from '../../core/state-management/group.state';
+import { SyncFacade } from '../sync/sync.facade';
 
 export interface ExpenseDocument extends Expense {
   pendingSync?: boolean;
@@ -41,7 +41,7 @@ export interface ExpenseDocument extends Expense {
 export class ExpenseFacade {
   private readonly api: ExpenseApiService = inject(ExpenseApiService);
   private readonly authfacade: AuthFacade = inject(AuthFacade);
-  private readonly syncApi: SyncApiService = inject(SyncApiService);
+  private readonly syncFacade: SyncFacade = inject(SyncFacade);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly localDB: ExpensesDBState = inject(ExpensesDBState);
 
@@ -57,27 +57,8 @@ export class ExpenseFacade {
     return fetchedGroups();
   });
 
-  private async isBackendAlive(): Promise<boolean> {
-    try {
-      return await new Promise((resolve: (value: boolean) => void) => {
-        this.syncApi
-          .ping()
-          .pipe(take(1))
-          .subscribe({
-            next: (isAlive: 'healthy' | 'unhealthy' | 'dead') => {
-              resolve(isAlive === 'healthy');
-            },
-            error: () => {
-              resolve(false);
-            },
-          });
-      });
-    } catch (error: unknown) {
-      const err: Error = error as Error;
-      setExpenseError(err.message || 'Failed to load local expenses');
-      return false;
-    }
-  }
+  private readonly isBackendAlive: () => Promise<boolean> = () =>
+    this.syncFacade.isBackendAlive();
 
   private refreshLocalExpenses(groupId: string): void {
     if (!groupId) {
@@ -362,6 +343,9 @@ export class ExpenseFacade {
             this.toast.warning('Expense saved locally, will sync when online');
             setExpenseLoading(false);
           },
+          complete: () => {
+            this.fetchExpenses(groupId);
+          },
         });
     } catch (error: unknown) {
       const err: Error = error as Error;
@@ -375,18 +359,12 @@ export class ExpenseFacade {
     data: ExpenseUpdateRequest,
   ): Promise<void> {
     if (!groupId || groupId.trim() === '') {
-      console.error(
-        '[ExpenseFacade] Cannot update expense - groupId is required',
-      );
       setExpenseError('Invalid group ID');
       this.toast.error('Invalid group ID');
       return;
     }
 
     if (!expenseId || expenseId.trim() === '') {
-      console.error(
-        '[ExpenseFacade] Cannot update expense - expenseId is required',
-      );
       setExpenseError('Invalid expense ID');
       this.toast.error('Invalid expense ID');
       return;
@@ -485,6 +463,9 @@ export class ExpenseFacade {
             );
             setExpenseLoading(false);
           },
+          complete: () => {
+            this.fetchExpenses(groupId);
+          },
         });
     } catch (error: unknown) {
       const err: Error = error as Error;
@@ -562,6 +543,9 @@ export class ExpenseFacade {
               'Expense deleted locally, will sync deletion when online',
             );
             setExpenseLoading(false);
+          },
+          complete: () => {
+            this.fetchExpenses(groupId);
           },
         });
     } catch (error) {

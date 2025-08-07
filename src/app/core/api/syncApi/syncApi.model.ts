@@ -1,5 +1,16 @@
 export type SyncOperationType = 'create' | 'update' | 'delete';
 export type SyncEntityType = 'expense' | 'group' | 'user';
+export enum SyncStatus {
+  Pending = 'pending',
+  Processing = 'processing',
+  Completed = 'completed',
+  Failed = 'failed',
+}
+export enum HealthStatus {
+  Healthy = 'healthy',
+  Unhealthy = 'unhealthy',
+  Dead = 'dead',
+}
 
 export interface SyncChange {
   type: SyncOperationType;
@@ -22,7 +33,7 @@ export interface BulkSyncResponse {
 export interface SyncStatusResponse {
   data: {
     operation_id: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
+    status: SyncStatus;
     created_at: string;
     completed_at?: string;
     notifications: string[];

@@ -31,6 +31,7 @@ import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.sta
 import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
 import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
 import { isAppOnline } from '../../core/state-management/sync.state';
+import { HealthStatus } from '../../core/api/syncApi/syncApi.model';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);
@@ -204,9 +205,9 @@ export class AuthFacade {
   isTokenValid(): Promise<boolean> {
     return new Promise((resolve: (value: boolean) => void) => {
       this.syncApi.ping().subscribe({
-        next: (status: 'healthy' | 'unhealthy' | 'dead') => {
+        next: (status: HealthStatus) => {
           switch (status) {
-            case 'healthy':
+            case HealthStatus.Healthy:
               this.api.getProfile().subscribe({
                 next: (user: User) => {
                   this.setProfile(user);
@@ -220,11 +221,11 @@ export class AuthFacade {
               });
               break;
 
-            case 'unhealthy':
+            case HealthStatus.Unhealthy:
               resolve(false);
               break;
 
-            case 'dead':
+            case HealthStatus.Dead:
               this.loadProfileFromCache()
                 .then((success: boolean) => {
                   resolve(success);

@@ -5,6 +5,7 @@ import { environment } from '../../../../environments/environment';
 import {
   BulkSyncRequest,
   BulkSyncResponse,
+  HealthStatus,
   SyncChange,
   SyncStatusResponse,
 } from './syncApi.model';
@@ -29,16 +30,18 @@ export class SyncApiService {
     );
   }
 
-  ping(): Observable<'healthy' | 'unhealthy' | 'dead'> {
+  ping(): Observable<HealthStatus> {
     return this.http
       .get<{ data: { status: string } }>(`${environment.apiUrl}/health`)
       .pipe(
         timeout(500),
         map((res: { data: { status: string } }) => {
-          return res.data?.status === 'ok' ? 'healthy' : 'unhealthy';
+          return res.data?.status === 'ok'
+            ? HealthStatus.Healthy
+            : HealthStatus.Unhealthy;
         }),
         catchError(() => {
-          return of('dead' as const);
+          return of(HealthStatus.Dead);
         }),
       );
   }

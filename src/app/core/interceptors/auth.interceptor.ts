@@ -5,16 +5,16 @@ import {
   HttpErrorResponse,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
-import { catchError, switchMap, throwError, from, tap } from 'rxjs';
+import { catchError, switchMap, throwError, from } from 'rxjs';
 import { TokenState } from '../services/token.state';
-import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { AuthFacade } from '../../service/auth/auth.facade';
 
 export const AuthInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ) => {
   const tokenState: TokenState = inject(TokenState);
-  const authApiService: AuthApiService = inject(AuthApiService);
+  const authFacade: AuthFacade = inject(AuthFacade);
 
   const accessToken: string | null = tokenState.getAccessToken();
   const refreshToken: string | null = tokenState.getRefreshToken();
@@ -37,11 +37,7 @@ export const AuthInterceptor: HttpInterceptorFn = (
         refreshToken &&
         messageContainsToken
       ) {
-        return from(authApiService.refreshToken(refreshToken)).pipe(
-          tap((res: { token: string; refresh_token: string }) => {
-            tokenState.setAccessToken(res.token);
-            tokenState.setRefreshToken(res.refresh_token);
-          }),
+        return from(authFacade.refreshToken(refreshToken)).pipe(
           switchMap(() => {
             const newAccessToken: string | null = tokenState.getAccessToken();
             if (!newAccessToken) return throwError(() => error);
