@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, Signal } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { switchMap, take } from 'rxjs';
+import { User } from '../../core/api/authApi/authApi.model';
 import {
   Group,
   GroupListResponse,
@@ -28,7 +29,6 @@ import {
 } from '../../core/state-management/group.state';
 import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
 import { AuthFacade } from '../auth/auth.facade';
-import { User } from '../../core/api/authApi/authApi.model';
 
 @Injectable({ providedIn: 'root' })
 export class GroupFacade {

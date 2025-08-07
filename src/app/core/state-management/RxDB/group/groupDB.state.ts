@@ -67,4 +67,12 @@ export class GroupDBState {
       ),
     );
   }
+
+  removeAllGroups$(): Observable<void> {
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<GroupDocument>) =>
+        from(collection.remove()).pipe(map(() => void 0)),
+      ),
+    );
+  }
 }

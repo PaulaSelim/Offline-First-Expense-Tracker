@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { RxCollection, RxDatabase, RxDocument } from 'rxdb';
 import { from, map, Observable, switchMap } from 'rxjs';
+import { Expense } from '../../../api/expenseApi/expenseApi.model';
 import { RxdbService } from '../rxdb.service';
 import { ExpenseDocument, Participant } from './expenses.schema';
-import { Expense } from '../../../api/expenseApi/expenseApi.model';
 
 @Injectable({
   providedIn: 'root',
@@ -84,6 +84,14 @@ export class ExpensesDBState {
               doc ? from(doc.remove()).pipe(map(() => void 0)) : from([void 0]),
             ),
           ),
+      ),
+    );
+  }
+
+  removeAllExpenses$(): Observable<void> {
+    return this.getCollection$().pipe(
+      switchMap((collection: RxCollection<ExpenseDocument>) =>
+        from(collection.remove()).pipe(map(() => void 0)),
       ),
     );
   }

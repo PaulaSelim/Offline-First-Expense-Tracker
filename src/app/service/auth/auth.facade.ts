@@ -11,6 +11,7 @@ import {
   User,
 } from '../../core/api/authApi/authApi.model';
 import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
 import { TokenState } from '../../core/services/token.state';
 import {
   authData,
@@ -25,10 +26,11 @@ import {
   userId,
   userName,
 } from '../../core/state-management/auth.state';
+import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
+import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
+import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
 import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
 import { isAppOnline } from '../../core/state-management/sync.state';
-import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
-import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);
@@ -39,6 +41,9 @@ export class AuthFacade {
   private router: Router = inject(Router);
   readonly ROUTER_LINKS: typeof ROUTER_LINKS = ROUTER_LINKS;
   private readonly userDB: UserDBState = inject(UserDBState);
+  private readonly groupDB: GroupDBState = inject(GroupDBState);
+  private readonly expensesDB: ExpensesDBState = inject(ExpensesDBState);
+
   private readonly _isAppOnline: Signal<boolean> = computed(() =>
     isAppOnline(),
   );
@@ -145,14 +150,15 @@ export class AuthFacade {
     return window.confirm('Are you sure you want to logout?');
   }
 
-  logout(): void {
+  async logout(): Promise<void> {
     if (!this.confirmLogout()) {
       return;
     }
     this.userDB.removeUser$().pipe(take(1)).subscribe();
+    this.groupDB.removeAllGroups$().pipe(take(1)).subscribe();
+    this.expensesDB.removeAllExpenses$().pipe(take(1)).subscribe();
     this.tokenState.clearTokens();
     resetAuthState();
-    this.rxdbService.clearMyDatabase();
     this.toast.success('Logout successful!');
     this.router.navigate([ROUTER_LINKS.LOGIN]);
   }
