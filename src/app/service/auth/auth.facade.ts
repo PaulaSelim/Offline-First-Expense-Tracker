@@ -151,13 +151,17 @@ export class AuthFacade {
     if (!this.confirmLogout()) {
       return;
     }
-    this.userDB.removeUser$().pipe(take(1)).subscribe();
-    this.groupDB.removeAllGroups$().pipe(take(1)).subscribe();
-    this.expensesDB.removeAllExpenses$().pipe(take(1)).subscribe();
+    this.clearDB();
     this.tokenState.clearTokens();
     resetAuthState();
     this.toast.success('Logout successful!');
     this.router.navigate([ROUTER_LINKS.LOGIN]);
+  }
+
+  clearDB(): void {
+    this.userDB.removeUser$().pipe(take(1)).subscribe();
+    this.groupDB.removeAllGroups$().pipe(take(1)).subscribe();
+    this.expensesDB.removeAllExpenses$().pipe(take(1)).subscribe();
   }
 
   refreshToken(refreshToken: string): Promise<void> {
