@@ -16,10 +16,7 @@ export interface SyncChange {
   type: SyncOperationType;
   entity: SyncEntityType;
   entity_id?: string;
-  data?: Record<
-    string,
-    string | number | boolean | null | string[] | number[] | boolean[] | null[]
-  >;
+  data?: SyncApiData;
   timestamp: string;
 }
 
@@ -43,3 +40,8 @@ export interface SyncStatusResponse {
     errors?: string[];
   };
 }
+
+export type SyncApiData = Record<
+  string,
+  string | number | boolean | null | string[] | number[] | boolean[] | null[]
+>;

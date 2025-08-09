@@ -15,7 +15,7 @@ describe('SyncStatusComponent', () => {
   let mockSyncFacade: jasmine.SpyObj<SyncFacade>;
 
   beforeEach(async () => {
-    mockSyncFacade = jasmine.createSpyObj('SyncFacade', ['forcSync'], {
+    mockSyncFacade = jasmine.createSpyObj('SyncFacade', ['forceSync'], {
       isOnline: createSignal(true),
       isBackendReachable: createSignal(true),
       syncStats: createSignal({
@@ -42,10 +42,10 @@ describe('SyncStatusComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should call forcSync on the facade', async () => {
-    mockSyncFacade.forcSync.and.resolveTo();
-    await component.forcSync();
-    expect(mockSyncFacade.forcSync).toHaveBeenCalled();
+  it('should call forceSync on the facade', async () => {
+    mockSyncFacade.forceSync.and.resolveTo();
+    await component.forceSync();
+    expect(mockSyncFacade.forceSync).toHaveBeenCalled();
   });
 
   it('should reflect online status', () => {
