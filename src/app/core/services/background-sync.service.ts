@@ -1,11 +1,4 @@
-import {
-  Injectable,
-  Signal,
-  WritableSignal,
-  computed,
-  inject,
-  signal,
-} from '@angular/core';
+import { Injectable, Signal, inject } from '@angular/core';
 import { ToastrService } from 'ngx-toastr';
 import { switchMap, take } from 'rxjs';
 import {
@@ -23,6 +16,18 @@ import { SyncQueueDocument } from '../state-management/RxDB/sync-queue/sync-queu
 import { SyncQueueDBState } from '../state-management/RxDB/sync-queue/sync-queueDB.state';
 import { NetworkStatusService } from './network-status.service';
 
+import {
+  failedItems,
+  hasFailedItems,
+  isSyncing,
+  setFailedItems,
+  setIsSyncing,
+  setSyncProgress,
+  setTotalItems,
+  syncProgress,
+  totalItems,
+} from '../state-management/sync.state';
+
 @Injectable({
   providedIn: 'root',
 })
@@ -36,18 +41,11 @@ export class BackgroundSyncService {
   private readonly expensesDB: ExpensesDBState = inject(ExpensesDBState);
   private readonly groupDB: GroupDBState = inject(GroupDBState);
 
-  private readonly _isSyncing: WritableSignal<boolean> = signal(false);
-  private readonly _syncProgress: WritableSignal<number> = signal(0);
-  private readonly _totalItems: WritableSignal<number> = signal(0);
-  private readonly _failedItems: WritableSignal<number> = signal(0);
-
-  readonly isSyncing: Signal<boolean> = computed(() => this._isSyncing());
-  readonly syncProgress: Signal<number> = computed(() => this._syncProgress());
-  readonly totalItems: Signal<number> = computed(() => this._totalItems());
-  readonly failedItems: Signal<number> = computed(() => this._failedItems());
-  readonly hasFailedItems: Signal<boolean> = computed(
-    () => this._failedItems() > 0,
-  );
+  readonly isSyncing: Signal<boolean> = isSyncing;
+  readonly syncProgress: Signal<number> = syncProgress;
+  readonly totalItems: Signal<number> = totalItems;
+  readonly failedItems: Signal<number> = failedItems;
+  readonly hasFailedItems: Signal<boolean> = hasFailedItems;
 
   private isInitialized: boolean = false;
   private readonly MAX_RETRIES: number = 3;
@@ -62,36 +60,33 @@ export class BackgroundSyncService {
 
     this.syncQueueDB.clearProcessingFlags$().pipe(take(1)).subscribe();
 
-    if (this.networkStatus.isFullyOnline() && !this._isSyncing()) {
+    if (this.networkStatus.isFullyOnline() && !isSyncing()) {
       setTimeout(() => this.startSync(), 1000);
     }
   }
 
   async startSync(): Promise<void> {
-    if (this._isSyncing()) {
-      console.error('Sync already in progress');
+    if (isSyncing()) {
       return;
     }
 
     if (!this.networkStatus.isFullyOnline()) {
-      console.error('Cannot sync: not fully online');
       return;
     }
 
-    this._isSyncing.set(true);
-    this._syncProgress.set(0);
-    this._failedItems.set(0);
+    setIsSyncing(true);
+    setSyncProgress(0);
+    setFailedItems(0);
 
     try {
       const pendingItems: SyncQueueDocument[] = await this.getPendingItems();
 
       if (pendingItems.length === 0) {
-        this._isSyncing.set(false);
+        setIsSyncing(false);
         return;
       }
 
-      this._totalItems.set(pendingItems.length);
-      console.error(`Starting sync of ${pendingItems.length} items`);
+      setTotalItems(pendingItems.length);
 
       let processedCount: number = 0;
       let failedCount: number = 0;
@@ -101,17 +96,16 @@ export class BackgroundSyncService {
           await this.processSyncItem(item);
           processedCount++;
         } catch (error) {
-          console.error(`Failed to sync item ${item.id}:`, error);
           failedCount++;
           await this.handleSyncError(item, error);
         }
 
-        this._syncProgress.set(
+        setSyncProgress(
           ((processedCount + failedCount) / pendingItems.length) * 100,
         );
       }
 
-      this._failedItems.set(failedCount);
+      setFailedItems(failedCount);
 
       if (processedCount > 0) {
         this.toast.success(
@@ -130,7 +124,7 @@ export class BackgroundSyncService {
       console.error('Sync process failed:', error);
       this.toast.error('Sync process encountered an error');
     } finally {
-      this._isSyncing.set(false);
+      setIsSyncing(false);
     }
   }
 
@@ -342,9 +336,6 @@ export class BackgroundSyncService {
         : String(error) || 'Unknown error';
 
     if (item.retryCount >= this.MAX_RETRIES) {
-      console.error(
-        `Max retries reached for item ${item.id}, removing from queue`,
-      );
       await new Promise<void>((resolve: (value: void) => void) => {
         this.syncQueueDB
           .removeFromQueue$(item.id)
@@ -367,7 +358,7 @@ export class BackgroundSyncService {
     }
   }
 
-  async forcSync(): Promise<void> {
+  async forceSync(): Promise<void> {
     if (!this.networkStatus.isFullyOnline()) {
       this.toast.warning('Cannot sync while offline');
       return;
