@@ -1,11 +1,4 @@
-import {
-  computed,
-  inject,
-  Injectable,
-  Signal,
-  signal,
-  WritableSignal,
-} from '@angular/core';
+import { inject, Injectable, Signal } from '@angular/core';
 import { fromEvent, merge, Observable, of } from 'rxjs';
 import {
   debounceTime,
@@ -15,7 +8,15 @@ import {
 } from 'rxjs/operators';
 import { HealthStatus } from '../api/syncApi/syncApi.model';
 import { SyncApiService } from '../api/syncApi/syncApi.service';
-import { setAppOnlineStatus } from '../state-management/sync.state';
+import {
+  isBackendReachable,
+  isFullyOnline,
+  isOnline,
+  lastConnectionCheck,
+  setIsBackendReachable,
+  setIsOnline,
+  setLastConnectionCheck,
+} from '../state-management/network-status.state';
 
 @Injectable({
   providedIn: 'root',
@@ -23,24 +24,10 @@ import { setAppOnlineStatus } from '../state-management/sync.state';
 export class NetworkStatusService {
   private readonly syncApi: SyncApiService = inject(SyncApiService);
 
-  private readonly _isOnline: WritableSignal<boolean> = signal(
-    navigator.onLine,
-  );
-  private readonly _isBackendReachable: WritableSignal<boolean> = signal(false);
-  private readonly _lastConnectionCheck: WritableSignal<Date> = signal(
-    new Date(),
-  );
-
-  readonly isOnline: Signal<boolean> = computed(() => this._isOnline());
-  readonly isBackendReachable: Signal<boolean> = computed(() =>
-    this._isBackendReachable(),
-  );
-  readonly isFullyOnline: Signal<boolean> = computed(
-    () => this._isOnline() && this._isBackendReachable(),
-  );
-  readonly lastConnectionCheck: Signal<Date> = computed(() =>
-    this._lastConnectionCheck(),
-  );
+  readonly isOnline: Signal<boolean> = isOnline;
+  readonly isBackendReachable: Signal<boolean> = isBackendReachable;
+  readonly isFullyOnline: Signal<boolean> = isFullyOnline;
+  readonly lastConnectionCheck: Signal<Date> = lastConnectionCheck;
 
   private checkInterval: number | null = null;
 
@@ -65,28 +52,27 @@ export class NetworkStatusService {
         debounceTime(100),
       )
       .subscribe((isOnline: boolean) => {
-        this._isOnline.set(isOnline);
-        setAppOnlineStatus(isOnline);
+        setIsOnline(isOnline);
 
         if (isOnline) {
           this.checkBackendHealth();
         } else {
-          this._isBackendReachable.set(false);
+          setIsBackendReachable(false);
         }
       });
   }
 
   private startPeriodicCheck(): void {
     this.checkInterval = setInterval(() => {
-      if (this._isOnline()) {
+      if (isOnline()) {
         this.checkBackendHealth();
       }
     }, 30000);
   }
 
   async checkBackendHealth(): Promise<boolean> {
-    if (!this._isOnline()) {
-      this._isBackendReachable.set(false);
+    if (!isOnline()) {
+      setIsBackendReachable(false);
       return false;
     }
 
@@ -103,12 +89,12 @@ export class NetworkStatusService {
         },
       );
 
-      this._isBackendReachable.set(isReachable);
-      this._lastConnectionCheck.set(new Date());
+      setIsBackendReachable(isReachable);
+      setLastConnectionCheck(new Date());
 
       return isReachable;
     } catch {
-      this._isBackendReachable.set(false);
+      setIsBackendReachable(false);
       return false;
     }
   }
