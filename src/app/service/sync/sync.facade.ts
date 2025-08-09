@@ -3,6 +3,7 @@ import { take } from 'rxjs';
 import { HealthStatus, SyncChange } from '../../core/api/syncApi/syncApi.model';
 import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
 import { BackgroundSyncService } from '../../core/services/background-sync.service';
+import { NetworkStatusClassEnum } from '../../core/services/network-status.model';
 import { NetworkStatusService } from '../../core/services/network-status.service';
 import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { setSyncError } from '../../core/state-management/sync.state';
@@ -28,20 +29,20 @@ export class SyncFacade {
     this.backgroundSync.getQueueStats(),
   );
   readonly pendingItemsCount: Signal<number> = computed(() => {
-    return 0;
+    return this.syncStats().totalItems - this.syncStats().progress;
   });
-  readonly networkStatusClass: Signal<string> = computed(() => {
+  readonly networkStatusClass: Signal<NetworkStatusClassEnum> = computed(() => {
     if (this.isOnline() && this.isBackendReachable()) {
-      return 'network-status online';
+      return NetworkStatusClassEnum.Online;
     } else if (this.isOnline() && !this.isBackendReachable()) {
-      return 'network-status backend-offline';
+      return NetworkStatusClassEnum.BackendOffline;
     } else {
-      return 'network-status offline';
+      return NetworkStatusClassEnum.Offline;
     }
   });
 
-  forcSync(): Promise<void> {
-    return this.backgroundSync.forcSync();
+  forceSync(): Promise<void> {
+    return this.backgroundSync.forceSync();
   }
 
   bulkSync(changes: SyncChange[]): void {
