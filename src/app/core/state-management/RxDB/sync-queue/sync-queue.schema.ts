@@ -1,8 +1,19 @@
-// sync-queue/sync-queue.schema.ts
 import { RxJsonSchema } from 'rxdb';
 
-export type SyncActionType = 'create' | 'update' | 'delete';
-export type SyncEntityType = 'expense' | 'group' | 'user';
+export enum SyncActionTypeENUM {
+  Create = 'create',
+  Update = 'update',
+  Delete = 'delete',
+}
+
+export enum SyncEntityTypeENUM {
+  Expense = 'expense',
+  Group = 'group',
+  User = 'user',
+}
+
+export type SyncActionType = `${SyncActionTypeENUM}`;
+export type SyncEntityType = `${SyncEntityTypeENUM}`;
 
 export interface SyncQueueDocument {
   id: string;
@@ -10,7 +21,7 @@ export interface SyncQueueDocument {
   entityId: string;
   action: SyncActionType;
   data: Record<string, unknown>;
-  groupId?: string; // For expense operations
+  groupId?: string;
   timestamp: string;
   retryCount: number;
   lastError?: string;
@@ -23,9 +34,9 @@ export const syncQueueSchema: RxJsonSchema<SyncQueueDocument> = {
   type: 'object',
   properties: {
     id: { type: 'string', maxLength: 100 },
-    entityType: { enum: ['expense', 'group', 'user'] },
+    entityType: { enum: Object.values(SyncEntityTypeENUM) },
     entityId: { type: 'string', maxLength: 100 },
-    action: { enum: ['create', 'update', 'delete'] },
+    action: { enum: Object.values(SyncActionTypeENUM) },
     data: { type: 'object' },
     groupId: { type: 'string', maxLength: 100 },
     timestamp: { type: 'string', format: 'date-time' },
