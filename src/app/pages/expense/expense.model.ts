@@ -9,6 +9,5 @@ export const categories: Category[] = [
   { id: 'Transport', name: 'Transportation', icon: 'bi bi-truck' },
   { id: 'Entertainment', name: 'Entertainment', icon: 'bi bi-film' },
   { id: 'Utilities', name: 'Utilities', icon: 'bi bi-lightbulb-fill' },
-  { id: 'Healthcare', name: 'Healthcare', icon: 'bi bi-hospital-fill' },
   { id: 'other', name: 'Other', icon: 'bi bi-box' },
 ];

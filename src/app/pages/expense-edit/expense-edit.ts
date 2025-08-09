@@ -70,6 +70,7 @@ export class ExpenseEdit implements OnInit {
     payer_id: ['', [Validators.required]],
     category: ['', [Validators.required]],
     date: ['', [Validators.required]],
+    is_payer_included: [true, [Validators.required]],
     participants_id: [[], [Validators.required, Validators.minLength(1)]],
   });
 
@@ -124,16 +125,19 @@ export class ExpenseEdit implements OnInit {
 
   private populateForm(): void {
     const expense: Expense | null = this.selectedExpense();
+
     if (expense) {
+      const participantIds: string[] = expense.participants
+        ? expense.participants.map((p: Participant) => p.user_id)
+        : [];
       this.expenseForm.patchValue({
         title: expense.title,
         amount: expense.amount,
         payer_id: expense.payer?.id || '',
         category: expense.category,
         date: expense.date,
-        participants_id: (expense.participants || []).map(
-          (p: Participant) => p.id,
-        ),
+        is_payer_included: expense.is_payer_included,
+        participants_id: participantIds,
       });
     }
   }
@@ -148,6 +152,7 @@ export class ExpenseEdit implements OnInit {
         payer_id: this.expenseForm.value.payer_id,
         category: this.expenseForm.value.category,
         date: this.expenseForm.value.date,
+        is_payer_included: this.expenseForm.value.is_payer_included,
         participants_id: this.expenseForm.value.participants_id,
       };
 

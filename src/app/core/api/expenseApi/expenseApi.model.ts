@@ -28,6 +28,7 @@ export interface Expense {
   date: string;
   created_at: string;
   updated_at: string;
+  is_payer_included?: boolean;
   payer?: Participant;
   participants?: Participant[];
   participant_count?: number;
@@ -67,5 +68,6 @@ export interface ExpenseUpdateRequest {
   category: string;
   payer_id: string;
   date: string;
+  is_payer_included: boolean;
   participants_id: string[];
 }

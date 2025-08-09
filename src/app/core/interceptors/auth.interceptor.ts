@@ -40,10 +40,7 @@ export const AuthInterceptor: HttpInterceptorFn = (
         return from(authFacade.refreshToken(refreshToken)).pipe(
           switchMap(() => {
             const newAccessToken: string | null = tokenState.getAccessToken();
-
-            if (!newAccessToken) {
-              return throwError(() => error);
-            }
+            if (!newAccessToken) return throwError(() => error);
 
             const retryReq: HttpRequest<unknown> = req.clone({
               setHeaders: { Authorization: `Bearer ${newAccessToken}` },

@@ -465,7 +465,6 @@ describe('ExpenseCreate', () => {
         { id: 'Transport', name: 'Transportation', icon: '🚗' },
         { id: 'Entertainment', name: 'Entertainment', icon: '🎬' },
         { id: 'Utilities', name: 'Utilities', icon: '💡' },
-        { id: 'Healthcare', name: 'Healthcare', icon: '🏥' },
         { id: 'other', name: 'Other', icon: '📦' },
       ]);
     });

@@ -1,11 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  Signal,
-} from '@angular/core';
-import { Group } from '../../core/api/groupApi/groupApi.model';
-import { GroupFacade } from '../../service/group/group.facade';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { DashboardGroupList } from './components/dashboard-Group-list/dashboard-group-list';
 import { DashboardHeader } from './components/dashboard-header/dashboard-header';
 @Component({
@@ -16,7 +9,4 @@ import { DashboardHeader } from './components/dashboard-header/dashboard-header'
   styleUrl: './dashboard.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Dashboard {
-  private readonly groupProvider: GroupFacade = inject(GroupFacade);
-  readonly groupList: Signal<Group[]> = this.groupProvider.getGroups();
-}
+export class Dashboard {}
