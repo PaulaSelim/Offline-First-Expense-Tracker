@@ -11,6 +11,7 @@ import {
   User,
 } from '../../core/api/authApi/authApi.model';
 import { AuthApiService } from '../../core/api/authApi/authApi.service';
+import { HealthStatus } from '../../core/api/syncApi/syncApi.model';
 import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
 import { TokenState } from '../../core/services/token.state';
 import {
@@ -31,7 +32,6 @@ import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.sta
 import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
 import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
 import { isAppOnline } from '../../core/state-management/sync.state';
-import { HealthStatus } from '../../core/api/syncApi/syncApi.model';
 @Injectable({ providedIn: 'root' })
 export class AuthFacade {
   private api: AuthApiService = inject(AuthApiService);

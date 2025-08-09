@@ -1,12 +1,49 @@
-import { inject, Injectable } from '@angular/core';
-import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
-import { HealthStatus, SyncChange } from '../../core/api/syncApi/syncApi.model';
+import { computed, inject, Injectable, Signal } from '@angular/core';
 import { take } from 'rxjs';
+import { HealthStatus, SyncChange } from '../../core/api/syncApi/syncApi.model';
+import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
+import { BackgroundSyncService } from '../../core/services/background-sync.service';
+import { NetworkStatusClassEnum } from '../../core/services/network-status.model';
+import { NetworkStatusService } from '../../core/services/network-status.service';
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { setSyncError } from '../../core/state-management/sync.state';
+import { SyncStats } from './sync.model';
 
 @Injectable({ providedIn: 'root' })
 export class SyncFacade {
   private readonly syncApi: SyncApiService = inject(SyncApiService);
+  private readonly networkStatus: NetworkStatusService =
+    inject(NetworkStatusService);
+  private readonly backgroundSync: BackgroundSyncService = inject(
+    BackgroundSyncService,
+  );
+  private readonly syncQueueDB: SyncQueueDBState = inject(SyncQueueDBState);
+
+  readonly isOnline: Signal<boolean> = computed(() =>
+    this.networkStatus.isOnline(),
+  );
+  readonly isBackendReachable: Signal<boolean> = computed(() =>
+    this.networkStatus.isBackendReachable(),
+  );
+  readonly syncStats: Signal<SyncStats> = computed(() =>
+    this.backgroundSync.getQueueStats(),
+  );
+  readonly pendingItemsCount: Signal<number> = computed(() => {
+    return this.syncStats().totalItems - this.syncStats().progress;
+  });
+  readonly networkStatusClass: Signal<NetworkStatusClassEnum> = computed(() => {
+    if (this.isOnline() && this.isBackendReachable()) {
+      return NetworkStatusClassEnum.Online;
+    } else if (this.isOnline() && !this.isBackendReachable()) {
+      return NetworkStatusClassEnum.BackendOffline;
+    } else {
+      return NetworkStatusClassEnum.Offline;
+    }
+  });
+
+  forceSync(): Promise<void> {
+    return this.backgroundSync.forceSync();
+  }
 
   bulkSync(changes: SyncChange[]): void {
     this.syncApi.bulkSync(changes).subscribe();

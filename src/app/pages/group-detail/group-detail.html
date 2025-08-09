@@ -3,6 +3,7 @@
 } @else if (selectedGroup()) {
   <div class="container py-4">
     <app-group-header />
+    <app-sync-status />
     <app-view-expenses (viewExpenses)="onViewExpenses()" />
     <app-group-member-list />
   </div>

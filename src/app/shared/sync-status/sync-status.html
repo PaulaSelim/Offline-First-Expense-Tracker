@@ -1,0 +1,57 @@
+<div class="d-flex align-items-center gap-3 small p-2">
+  <div [ngClass]="networkStatusClass()">
+    @if (isOnline()) {
+      @if (isBackendReachable()) {
+        <div class="d-flex align-items-center text-success">
+          <i class="bi bi-circle-fill me-1"></i>
+          <span>Online</span>
+        </div>
+      } @else {
+        <div class="d-flex align-items-center text-warning">
+          <i class="bi bi-circle-fill me-1"></i>
+          <span>Server Unavailable</span>
+        </div>
+      }
+    } @else {
+      <div class="d-flex align-items-center text-danger">
+        <i class="bi bi-circle-fill me-1"></i>
+        <span>Offline</span>
+      </div>
+    }
+  </div>
+
+  @if (syncStats().isSyncing) {
+    <div class="d-flex align-items-center text-primary">
+      <div class="spinner-border spinner-border-sm me-1"></div>
+      <span>Syncing... ({{ syncStats().progress | number: "1.0-0" }}%)</span>
+    </div>
+  } @else if (pendingItemsCount() > 0) {
+    <div class="d-flex align-items-center text-warning">
+      <i class="bi bi-exclamation-circle me-1"></i>
+      <span>{{ pendingItemsCount() }} items pending sync</span>
+      @if (isBackendReachable()) {
+        <button
+          class="btn btn-outline-warning btn-sm ms-2"
+          (click)="forceSync()"
+          [disabled]="syncStats().isSyncing"
+        >
+          <i class="bi bi-arrow-repeat"></i> Sync Now
+        </button>
+      }
+    </div>
+  }
+
+  @if (syncStats().hasFailedItems) {
+    <div class="d-flex align-items-center text-danger">
+      <i class="bi bi-x-circle me-1"></i>
+      <span>{{ syncStats().failedItems }} items failed</span>
+      <button
+        class="btn btn-outline-danger btn-sm ms-2"
+        (click)="forceSync()"
+        [disabled]="syncStats().isSyncing || !isBackendReachable()"
+      >
+        <i class="bi bi-arrow-clockwise"></i> Retry
+      </button>
+    </div>
+  }
+</div>
