@@ -133,7 +133,7 @@ export class ExpenseEdit implements OnInit {
       this.expenseForm.patchValue({
         title: expense.title,
         amount: expense.amount,
-        payer_id: expense.payer_id,
+        payer_id: expense.payer?.id || '',
         category: expense.category,
         date: expense.date,
         is_payer_included: expense.is_payer_included,
