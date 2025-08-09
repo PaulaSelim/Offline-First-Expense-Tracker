@@ -16,7 +16,10 @@ export interface SyncChange {
   type: SyncOperationType;
   entity: SyncEntityType;
   entity_id?: string;
-  data?: Record<string, string | number | boolean | null>;
+  data?: Record<
+    string,
+    string | number | boolean | null | string[] | number[] | boolean[] | null[]
+  >;
   timestamp: string;
 }
 

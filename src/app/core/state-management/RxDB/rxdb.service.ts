@@ -3,6 +3,7 @@ import { createRxDatabase, RxDatabase } from 'rxdb';
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage';
 import { expensesSchema } from './expenses/expenses.schema';
 import { groupsSchema } from './group/group.schema';
+import { syncQueueSchema } from './sync-queue/sync-queue.schema';
 import { usersSchema } from './user/user.schema';
 
 @Injectable({
@@ -26,6 +27,7 @@ export class RxdbService {
       users: { schema: usersSchema },
       groups: { schema: groupsSchema },
       expenses: { schema: expensesSchema },
+      syncQueue: { schema: syncQueueSchema },
     });
 
     return db;
