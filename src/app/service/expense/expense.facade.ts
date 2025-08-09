@@ -1,35 +1,39 @@
+// facades/expense/expense.facade.ts (Enhanced with sync queue)
 import { computed, inject, Injectable, Signal } from '@angular/core';
-import { ExpenseApiService } from '../../core/api/expenseApi/expenseApi.service';
+import { ToastrService } from 'ngx-toastr';
+import { take } from 'rxjs';
 import {
-  ExpenseRequest,
-  ExpenseListResponse,
-  ExpenseResponse,
   Expense,
-  UserBalanceResponse,
+  ExpenseListResponse,
+  ExpenseRequest,
+  ExpenseResponse,
   ExpenseUpdateRequest,
   Participant,
+  UserBalanceResponse,
 } from '../../core/api/expenseApi/expenseApi.model';
+import { ExpenseApiService } from '../../core/api/expenseApi/expenseApi.service';
+import { NetworkStatusService } from '../../core/services/network-status.service';
 import {
-  setExpenses,
-  setSelectedExpense,
+  _userBalance,
+  expenseError,
+  expenseLoading,
+  expenses,
+  selectedExpense,
   setExpenseError,
   setExpenseLoading,
   setExpensePagination,
-  expenses,
-  selectedExpense,
-  expenseError,
-  expenseLoading,
-  _userBalance,
+  setExpenses,
+  setSelectedExpense,
 } from '../../core/state-management/expense.state';
-import { ToastrService } from 'ngx-toastr';
-import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
-import { take } from 'rxjs';
 import {
-  fetchedGroups,
   addFetchedGroup,
+  fetchedGroups,
 } from '../../core/state-management/group.state';
-import { SyncFacade } from '../sync/sync.facade';
+import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
+
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { AuthFacade } from '../auth/auth.facade';
+import { SyncFacade } from '../sync/sync.facade';
 
 export interface ExpenseDocument extends Expense {
   pendingSync?: boolean;
@@ -39,9 +43,13 @@ export interface ExpenseDocument extends Expense {
 export class ExpenseFacade {
   private readonly api: ExpenseApiService = inject(ExpenseApiService);
   private readonly authfacade: AuthFacade = inject(AuthFacade);
+  private readonly syncQueueDB: SyncQueueDBState = inject(SyncQueueDBState);
   private readonly syncFacade: SyncFacade = inject(SyncFacade);
+  private readonly networkStatus: NetworkStatusService =
+    inject(NetworkStatusService);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly localDB: ExpensesDBState = inject(ExpensesDBState);
+
   private readonly _expenses: Signal<Expense[]> = computed(() => expenses());
   private readonly _selectedExpense: Signal<Expense | null> = computed(() =>
     selectedExpense(),
@@ -72,7 +80,7 @@ export class ExpenseFacade {
       setExpenses(localExpenses);
       setExpenseLoading(false);
 
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         if (localExpenses.length > 0) {
           this.toast.info('Using cached expenses (offline mode)');
         }
@@ -133,7 +141,7 @@ export class ExpenseFacade {
         setSelectedExpense(localExpense);
       }
 
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.info('Using cached expense (offline mode)');
         setExpenseLoading(false);
         return;
@@ -178,9 +186,10 @@ export class ExpenseFacade {
       return;
     }
 
+    const localExpenseId: string = crypto.randomUUID();
     const localExpense: ExpenseDocument = {
       ...data,
-      id: crypto.randomUUID(),
+      id: localExpenseId,
       group_id: groupId,
       title: data.title,
       amount: data.amount,
@@ -195,14 +204,14 @@ export class ExpenseFacade {
       pendingSync: true,
     };
 
-    setSelectedExpense(localExpense);
     this.localDB
       .addOrUpdateExpense$(localExpense)
       .pipe(take(1))
       .subscribe({
         next: () => {
-          this.toast.success('Expense created locally!');
+          setSelectedExpense(localExpense);
           this.fetchExpenses(groupId);
+          this.toast.success('Expense created locally!');
         },
         error: () => {
           this.toast.error('Failed to create expense locally');
@@ -210,11 +219,23 @@ export class ExpenseFacade {
         },
       });
 
-    if (!(await this.isOnline())) {
+    this.syncQueueDB
+      .addToQueue$(
+        'expense',
+        localExpenseId,
+        'create',
+        data as unknown as Record<string, unknown>,
+        groupId,
+      )
+      .pipe(take(1))
+      .subscribe();
+
+    if (!this.isOnline()) {
       this.toast.info('Expense saved locally, will sync when online');
       setExpenseLoading(false);
       return;
     }
+
     this.api
       .createExpense(data, groupId)
       .pipe(take(1))
@@ -223,13 +244,18 @@ export class ExpenseFacade {
           const serverExpense: Expense = res.data.expense;
 
           this.localDB
-            .removeExpenseById$(localExpense.id)
+            .removeExpenseById$(localExpenseId)
             .pipe(take(1))
             .subscribe(() => {
               this.localDB
                 .addOrUpdateExpense$(serverExpense)
                 .pipe(take(1))
                 .subscribe(() => {
+                  this.syncQueueDB
+                    .removeFromQueue$(localExpenseId)
+                    .pipe(take(1))
+                    .subscribe();
+
                   this.fetchExpenses(groupId);
                   this.toast.success('Expense synced with server!');
                   setExpenseLoading(false);
@@ -239,9 +265,6 @@ export class ExpenseFacade {
         error: () => {
           this.toast.warning('Expense saved locally, will sync when online');
           setExpenseLoading(false);
-        },
-        complete: () => {
-          this.fetchExpenses(groupId);
         },
       });
   }
@@ -288,13 +311,25 @@ export class ExpenseFacade {
         .addOrUpdateExpense$(updatedExpense)
         .pipe(take(1))
         .subscribe({
-          next: async () => {
+          next: () => {
             setSelectedExpense(updatedExpense);
             this.fetchExpenses(groupId);
             this.toast.success('Expense updated locally!');
 
-            if (!(await this.isOnline())) {
+            this.syncQueueDB
+              .addToQueue$(
+                'expense',
+                expenseId,
+                'update',
+                data as unknown as Record<string, unknown>,
+                groupId,
+              )
+              .pipe(take(1))
+              .subscribe();
+
+            if (!this.isOnline()) {
               setExpenseLoading(false);
+              this.toast.info('Changes will sync when online');
               return;
             }
 
@@ -310,6 +345,11 @@ export class ExpenseFacade {
                     .addOrUpdateExpense$(serverExpense)
                     .pipe(take(1))
                     .subscribe(() => {
+                      this.syncQueueDB
+                        .removeFromQueue$(expenseId)
+                        .pipe(take(1))
+                        .subscribe();
+
                       this.fetchExpenses(groupId);
                       this.toast.success('Expense synced with server!');
                       setExpenseLoading(false);
@@ -320,9 +360,6 @@ export class ExpenseFacade {
                     'Expense updated locally, will sync when online',
                   );
                   setExpenseLoading(false);
-                },
-                complete: () => {
-                  this.fetchExpenses(groupId);
                 },
               });
           },
@@ -345,13 +382,19 @@ export class ExpenseFacade {
         .removeExpenseById$(expenseId)
         .pipe(take(1))
         .subscribe({
-          next: async () => {
+          next: () => {
             setSelectedExpense(null);
             this.fetchExpenses(groupId);
             this.toast.success('Expense deleted locally!');
 
-            if (!(await this.isOnline())) {
+            this.syncQueueDB
+              .addToQueue$('expense', expenseId, 'delete', {}, groupId)
+              .pipe(take(1))
+              .subscribe();
+
+            if (!this.isOnline()) {
               setExpenseLoading(false);
+              this.toast.info('Deletion will sync when online');
               return;
             }
 
@@ -360,6 +403,11 @@ export class ExpenseFacade {
               .pipe(take(1))
               .subscribe({
                 next: () => {
+                  this.syncQueueDB
+                    .removeFromQueue$(expenseId)
+                    .pipe(take(1))
+                    .subscribe();
+
                   this.toast.success('Expense deletion synced with server!');
                   setExpenseLoading(false);
                 },
@@ -368,9 +416,6 @@ export class ExpenseFacade {
                     'Expense deleted locally, will sync deletion when online',
                   );
                   setExpenseLoading(false);
-                },
-                complete: () => {
-                  this.fetchExpenses(groupId);
                 },
               });
           },
@@ -389,7 +434,7 @@ export class ExpenseFacade {
     setExpenseError(null);
 
     try {
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.calculateLocalBalance(groupId, userId);
         return;
       }
@@ -498,6 +543,7 @@ export class ExpenseFacade {
       this.toast.error('Invalid input');
     }
   }
+
   handleExpenseError(error: unknown, defaultMessage: string): void {
     const err: Error = error as Error;
     setExpenseError(err.message || defaultMessage);

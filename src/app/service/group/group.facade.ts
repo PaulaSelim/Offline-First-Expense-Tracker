@@ -13,6 +13,7 @@ import {
   GroupRole,
 } from '../../core/api/groupApi/groupApi.model';
 import { GroupApiService } from '../../core/api/groupApi/groupApi.service';
+import { NetworkStatusService } from '../../core/services/network-status.service';
 import {
   groupError,
   groupLoading,
@@ -27,6 +28,8 @@ import {
   setSelectedGroup,
 } from '../../core/state-management/group.state';
 import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
+
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { AuthFacade } from '../auth/auth.facade';
 import { SyncFacade } from '../sync/sync.facade';
 
@@ -34,7 +37,10 @@ import { SyncFacade } from '../sync/sync.facade';
 export class GroupFacade {
   private readonly groupApi: GroupApiService = inject(GroupApiService);
   private readonly authFacade: AuthFacade = inject(AuthFacade);
+  private readonly syncQueueDB: SyncQueueDBState = inject(SyncQueueDBState);
   private readonly syncFacade: SyncFacade = inject(SyncFacade);
+  private readonly networkStatus: NetworkStatusService =
+    inject(NetworkStatusService);
   private readonly toast: ToastrService = inject(ToastrService);
   private readonly groupDB: GroupDBState = inject(GroupDBState);
 
@@ -75,6 +81,7 @@ export class GroupFacade {
       ),
     ]);
   }
+
   async fetchGroups(): Promise<void> {
     setGroupLoading(true);
     setGroupError(null);
@@ -93,7 +100,7 @@ export class GroupFacade {
         return;
       }
 
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.info('Using cached groups (offline mode)');
         setGroupLoading(false);
         return;
@@ -142,7 +149,7 @@ export class GroupFacade {
         setSelectedGroup(localGroup);
       }
 
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         setGroupLoading(false);
         return;
       }
@@ -178,10 +185,11 @@ export class GroupFacade {
     setGroupLoading(true);
     setGroupError(null);
 
+    const localGroupId: string = crypto.randomUUID();
     const localGroup: Group = {
       ...data,
-      id: crypto.randomUUID(),
-      created_by: '',
+      id: localGroupId,
+      created_by: this.authFacade.getCurrentUserId()() || '',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       member_count: 1,
@@ -192,11 +200,23 @@ export class GroupFacade {
       .addOrUpdateGroup$(localGroup)
       .pipe(take(1))
       .subscribe({
-        next: async () => {
+        next: () => {
           this.toast.success('Group created locally!');
           this.fetchGroups();
-          if (!(await this.isOnline())) {
+
+          this.syncQueueDB
+            .addToQueue$(
+              'group',
+              localGroupId,
+              'create',
+              data as unknown as Record<string, unknown>,
+            )
+            .pipe(take(1))
+            .subscribe();
+
+          if (!this.isOnline()) {
             setGroupLoading(false);
+            this.toast.info('Group will sync when online');
             return;
           }
 
@@ -208,7 +228,7 @@ export class GroupFacade {
                 const serverGroup: Group = res.data.group;
 
                 this.groupDB
-                  .removeGroupById$(localGroup.id)
+                  .removeGroupById$(localGroupId)
                   .pipe(
                     switchMap(() =>
                       this.groupDB.addOrUpdateGroup$(serverGroup),
@@ -216,6 +236,11 @@ export class GroupFacade {
                     take(1),
                   )
                   .subscribe(() => {
+                    this.syncQueueDB
+                      .removeFromQueue$(localGroupId)
+                      .pipe(take(1))
+                      .subscribe();
+
                     this.fetchGroups();
                     this.toast.success('Group synced with server!');
                     setGroupLoading(false);
@@ -226,9 +251,6 @@ export class GroupFacade {
                   'Group saved locally, will sync when online',
                 );
                 setGroupLoading(false);
-              },
-              complete: () => {
-                this.fetchGroups();
               },
             });
         },
@@ -265,12 +287,24 @@ export class GroupFacade {
         .addOrUpdateGroup$(updatedGroup)
         .pipe(take(1))
         .subscribe({
-          next: async () => {
+          next: () => {
             setSelectedGroup(updatedGroup);
             this.fetchGroups();
             this.toast.success('Group updated locally!');
-            if (!(await this.isOnline())) {
+
+            this.syncQueueDB
+              .addToQueue$(
+                'group',
+                groupId,
+                'update',
+                data as unknown as Record<string, unknown>,
+              )
+              .pipe(take(1))
+              .subscribe();
+
+            if (!this.isOnline()) {
               setGroupLoading(false);
+              this.toast.info('Changes will sync when online');
               return;
             }
 
@@ -286,6 +320,11 @@ export class GroupFacade {
                     .addOrUpdateGroup$(serverGroup)
                     .pipe(take(1))
                     .subscribe(() => {
+                      this.syncQueueDB
+                        .removeFromQueue$(groupId)
+                        .pipe(take(1))
+                        .subscribe();
+
                       this.fetchGroups();
                       this.toast.success('Group synced with server!');
                       setGroupLoading(false);
@@ -296,9 +335,6 @@ export class GroupFacade {
                     'Group updated locally, will sync when online',
                   );
                   setGroupLoading(false);
-                },
-                complete: () => {
-                  this.fetchGroups();
                 },
               });
           },
@@ -321,12 +357,19 @@ export class GroupFacade {
         .removeGroupById$(groupId)
         .pipe(take(1))
         .subscribe({
-          next: async () => {
+          next: () => {
             setSelectedGroup(null);
             this.fetchGroups();
             this.toast.success('Group deleted locally!');
-            if (!(await this.isOnline())) {
+
+            this.syncQueueDB
+              .addToQueue$('group', groupId, 'delete', {})
+              .pipe(take(1))
+              .subscribe();
+
+            if (!this.isOnline()) {
               setGroupLoading(false);
+              this.toast.info('Deletion will sync when online');
               return;
             }
 
@@ -335,6 +378,11 @@ export class GroupFacade {
               .pipe(take(1))
               .subscribe({
                 next: () => {
+                  this.syncQueueDB
+                    .removeFromQueue$(groupId)
+                    .pipe(take(1))
+                    .subscribe();
+
                   this.toast.success('Group deletion synced with server!');
                   setGroupLoading(false);
                 },
@@ -343,9 +391,6 @@ export class GroupFacade {
                     'Group deleted locally, will sync deletion when online',
                   );
                   setGroupLoading(false);
-                },
-                complete: () => {
-                  this.fetchGroups();
                 },
               });
           },
@@ -363,7 +408,7 @@ export class GroupFacade {
     setGroupLoading(true);
     setGroupError(null);
     try {
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.info('Member data unavailable offline');
         const currentUser: User | null = this.authFacade.getCurrentUser()();
         if (currentUser) {
@@ -406,7 +451,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.error('Cannot add members while offline');
         setGroupLoading(false);
         return;
@@ -440,7 +485,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.error('Cannot update member roles while offline');
         setGroupLoading(false);
         return;
@@ -470,7 +515,7 @@ export class GroupFacade {
     setGroupError(null);
 
     try {
-      if (!(await this.isOnline())) {
+      if (!this.isOnline()) {
         this.toast.error('Cannot remove members while offline');
         setGroupLoading(false);
         return;
