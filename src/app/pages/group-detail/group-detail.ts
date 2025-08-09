@@ -15,6 +15,7 @@ import {
 } from '../../core/api/groupApi/groupApi.model';
 import { GroupFacade } from '../../service/group/group.facade';
 import { LoadingSpinner } from '../../shared/loading-spinner/loading-spinner';
+import { SyncStatusComponent } from '../../shared/sync-status/sync-status';
 import { Unauthorized } from '../unauthorized/unauthorized';
 import { GroupHeader } from './components/group-header/group-header';
 import { GroupMemberList } from './components/group-member-list/group-member-list';
@@ -29,6 +30,7 @@ import { ViewExpenses } from './components/view-expenses/view-expenses';
     Unauthorized,
     ViewExpenses,
     LoadingSpinner,
+    SyncStatusComponent,
   ],
   templateUrl: './group-detail.html',
   styleUrls: ['./group-detail.scss'],

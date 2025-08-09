@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -8,17 +9,17 @@ import {
   WritableSignal,
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
-import { ExpenseFacade } from '../../service/expense/expense.facade';
-import { GroupFacade } from '../../service/group/group.facade';
 import { Expense } from '../../core/api/expenseApi/expenseApi.model';
 import { Group } from '../../core/api/groupApi/groupApi.model';
-import { ExpenseList } from './expense-list/expense-list';
+import { ExpenseFacade } from '../../service/expense/expense.facade';
+import { GroupFacade } from '../../service/group/group.facade';
+import { SyncStatusComponent } from '../../shared/sync-status/sync-status';
 import { ExpenseHeader } from './expense-header/expense-header';
+import { ExpenseList } from './expense-list/expense-list';
 @Component({
   selector: 'app-expense',
   standalone: true,
-  imports: [CommonModule, ExpenseList, ExpenseHeader],
+  imports: [CommonModule, ExpenseList, ExpenseHeader, SyncStatusComponent],
   templateUrl: './expense.html',
   styleUrls: ['./expense.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
