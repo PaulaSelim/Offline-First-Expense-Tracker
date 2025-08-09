@@ -1,5 +1,4 @@
 <div class="d-flex align-items-center gap-3 small p-2">
-  <!-- Network Status -->
   <div [ngClass]="networkStatusClass()">
     @if (isOnline()) {
       @if (isBackendReachable()) {
@@ -21,7 +20,6 @@
     }
   </div>
 
-  <!-- Syncing -->
   @if (syncStats().isSyncing) {
     <div class="d-flex align-items-center text-primary">
       <div class="spinner-border spinner-border-sm me-1"></div>
@@ -34,7 +32,7 @@
       @if (isBackendReachable()) {
         <button
           class="btn btn-outline-warning btn-sm ms-2"
-          (click)="forcSync()"
+          (click)="forceSync()"
           [disabled]="syncStats().isSyncing"
         >
           <i class="bi bi-arrow-repeat"></i> Sync Now
@@ -43,14 +41,13 @@
     </div>
   }
 
-  <!-- Errors -->
   @if (syncStats().hasFailedItems) {
     <div class="d-flex align-items-center text-danger">
       <i class="bi bi-x-circle me-1"></i>
       <span>{{ syncStats().failedItems }} items failed</span>
       <button
         class="btn btn-outline-danger btn-sm ms-2"
-        (click)="forcSync()"
+        (click)="forceSync()"
         [disabled]="syncStats().isSyncing || !isBackendReachable()"
       >
         <i class="bi bi-arrow-clockwise"></i> Retry

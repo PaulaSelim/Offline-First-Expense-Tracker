@@ -35,7 +35,7 @@ export class SyncStatusComponent {
   readonly networkStatusClass: Signal<string> =
     this.syncFacade.networkStatusClass;
 
-  forcSync(): Promise<void> {
-    return this.syncFacade.forcSync();
+  forceSync(): Promise<void> {
+    return this.syncFacade.forceSync();
   }
 }
