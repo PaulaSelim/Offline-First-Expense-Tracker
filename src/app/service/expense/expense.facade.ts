@@ -423,6 +423,9 @@ export class ExpenseFacade {
             this.toast.error('Failed to delete expense locally');
             setExpenseLoading(false);
           },
+          complete: () => {
+            this.fetchExpenses(groupId);
+          },
         });
     } catch (error) {
       this.handleExpenseError(error, 'Failed to delete expense');

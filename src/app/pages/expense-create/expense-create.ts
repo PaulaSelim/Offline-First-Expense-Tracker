@@ -164,6 +164,7 @@ export class ExpenseCreate implements OnInit {
     }
 
     this.expenseForm.patchValue({ participants_id: newParticipants });
+    this.expenseForm.get('participants_id')?.updateValueAndValidity();
   }
 
   onSelectAllParticipants(): void {

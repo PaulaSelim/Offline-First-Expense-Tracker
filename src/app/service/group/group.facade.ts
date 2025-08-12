@@ -561,7 +561,25 @@ export class GroupFacade {
   }
 
   getGroupMembers(): Signal<GroupMember[]> {
-    return this._groupMembers;
+    const currentUserSignal: Signal<User | null> =
+      this.authFacade.getCurrentUser();
+    return computed(() => {
+      const members: GroupMember[] = this._groupMembers();
+      const currentUser: User | null = currentUserSignal();
+      if (!currentUser) return members;
+      if (!members.some((m: GroupMember) => m.id === currentUser.id)) {
+        return [
+          ...members,
+          {
+            id: currentUser.id,
+            username: currentUser.username,
+            email: currentUser.email,
+            role: GroupRole.MEMBER,
+          },
+        ];
+      }
+      return members;
+    });
   }
 
   handleGroupError(error: unknown, defaultMessage: string): void {
