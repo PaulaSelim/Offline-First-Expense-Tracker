@@ -30,6 +30,7 @@ import {
 import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
 import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
 import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
 import { isAppOnline } from '../../core/state-management/sync.state';
 @Injectable({ providedIn: 'root' })
@@ -44,6 +45,7 @@ export class AuthFacade {
   private readonly userDB: UserDBState = inject(UserDBState);
   private readonly groupDB: GroupDBState = inject(GroupDBState);
   private readonly expensesDB: ExpensesDBState = inject(ExpensesDBState);
+  private readonly syncQueueDB: SyncQueueDBState = inject(SyncQueueDBState);
 
   private readonly _isAppOnline: Signal<boolean> = computed(() =>
     isAppOnline(),
@@ -162,6 +164,7 @@ export class AuthFacade {
     this.userDB.removeUser$().pipe(take(1)).subscribe();
     this.groupDB.removeAllGroups$().pipe(take(1)).subscribe();
     this.expensesDB.removeAllExpenses$().pipe(take(1)).subscribe();
+    this.syncQueueDB.clearQueue$().pipe(take(1)).subscribe();
   }
 
   refreshToken(refreshToken: string): Promise<void> {

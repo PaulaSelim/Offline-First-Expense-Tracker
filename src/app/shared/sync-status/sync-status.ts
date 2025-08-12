@@ -1,5 +1,5 @@
 // components/sync-status/sync-status.component.ts
-import { DecimalPipe, NgClass } from '@angular/common';
+import { NgClass } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -18,7 +18,7 @@ interface SyncStats {
 @Component({
   selector: 'app-sync-status',
   standalone: true,
-  imports: [DecimalPipe, NgClass],
+  imports: [NgClass],
   templateUrl: './sync-status.html',
   styleUrls: ['./sync-status.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
