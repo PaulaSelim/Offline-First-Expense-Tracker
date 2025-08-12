@@ -33,7 +33,6 @@ export class WebSocketApi {
           return;
         }
 
-        // Track completion state
         let isCompleted: boolean = false;
 
         this.socket = new WebSocket(
@@ -41,26 +40,19 @@ export class WebSocketApi {
         );
 
         this.socket.onopen = (): void => {
-          console.error('[WebSocket] Connection opened');
-          console.error('[WebSocket] Sending request:', request);
           this.socket!.send(JSON.stringify(request));
         };
 
         this.socket.onmessage = (event: MessageEvent): void => {
-          console.error('[WebSocket] Message received:', event.data);
           try {
             const response: WebSocketSyncResponse = JSON.parse(event.data);
             observer.next(response);
 
             if (response.type === 'completed' || response.type === 'error') {
-              console.error(
-                '[WebSocket] Completed or error received, closing...',
-              );
               isCompleted = true;
               observer.complete();
             }
           } catch (error) {
-            console.error('Failed to parse WebSocket response:', error);
             isCompleted = true;
             observer.error(
               new Error(
@@ -71,7 +63,6 @@ export class WebSocketApi {
         };
 
         this.socket.onerror = (): void => {
-          console.error('[WebSocket] Connection error');
           if (!isCompleted) {
             isCompleted = true;
             observer.error(new Error('WebSocket connection error'));
@@ -79,7 +70,6 @@ export class WebSocketApi {
         };
 
         this.socket.onclose = (event: CloseEvent): void => {
-          console.error(`[WebSocket] Connection closed (code: ${event.code})`);
           if (isCompleted) return;
 
           switch (event.code) {
@@ -105,7 +95,6 @@ export class WebSocketApi {
           }
         };
 
-        // Cleanup function
         return () => {
           isCompleted = true;
           if (this.socket && this.socket.readyState === WebSocket.OPEN) {
