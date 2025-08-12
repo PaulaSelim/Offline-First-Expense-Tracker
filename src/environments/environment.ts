@@ -7,3 +7,11 @@ export const environment: Environment = {
     return `http://localhost:${this.port}/api/v1`;
   },
 };
+
+export const webSocketEnvironment: Environment = {
+  production: false,
+  webSocketPort: 8000,
+  get webSocketUrl() {
+    return `ws://localhost:${this.webSocketPort}/api/v2`;
+  },
+};
