@@ -60,15 +60,18 @@ export class BackgroundSyncService {
 
   private readonly useWebSocketSync: boolean = true;
 
+  private syncTimeout: number | null = null;
+
   constructor() {
     this.initBackgroundSync();
 
     effect(() => {
-      if (
+      const isFullyOnline: boolean =
         this.networkStatus.isOnline() &&
-        this.networkStatus.isBackendReachable()
-      ) {
-        this.startSync();
+        this.networkStatus.isBackendReachable();
+      if (isFullyOnline && !isSyncing()) {
+        if (this.syncTimeout) clearTimeout(this.syncTimeout);
+        this.syncTimeout = setTimeout(() => this.startSync(), 4000);
       }
     });
   }
@@ -233,11 +236,11 @@ export class BackgroundSyncService {
     }
   }
 
-  private processWebSocketNotifications(
+  private async processWebSocketNotifications(
     notifications: string[],
     originalItems: SyncQueueDocument[],
-  ): void {
-    notifications.forEach((notification: string) => {
+  ): Promise<void> {
+    for (const notification of notifications) {
       const parts: string[] = notification.split(':');
       if (parts.length >= 3) {
         const entity: string = parts[0];
@@ -252,10 +255,10 @@ export class BackgroundSyncService {
         );
 
         if (item) {
-          this.removeFromQueue(item.id);
+          await this.removeFromQueue(item.id);
         }
       }
-    });
+    }
   }
 
   private async removeFromQueue(itemId: string): Promise<void> {
@@ -473,20 +476,14 @@ export class BackgroundSyncService {
     error: unknown,
   ): Promise<void> {
     const errorMessage: string =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? (error as { message: string }).message
-        : String(error) || 'Unknown error';
+      error instanceof Error ? error.message : String(error) || 'Unknown error';
 
     if (item.retryCount >= this.MAX_RETRIES) {
-      await new Promise<void>((resolve: (value: void) => void) => {
-        this.syncQueueDB
-          .removeFromQueue$(item.id)
-          .pipe(take(1))
-          .subscribe({
-            next: () => resolve(),
-            error: () => resolve(),
-          });
-      });
+      await this.removeFromQueue(item.id);
+
+      this.toast.error(
+        `Failed to sync ${item.entityType} after ${this.MAX_RETRIES} attempts`,
+      );
     } else {
       await new Promise<void>((resolve: (value: void) => void) => {
         this.syncQueueDB
@@ -494,7 +491,9 @@ export class BackgroundSyncService {
           .pipe(take(1))
           .subscribe({
             next: () => resolve(),
-            error: () => resolve(),
+            error: () => {
+              resolve();
+            },
           });
       });
     }
@@ -503,6 +502,9 @@ export class BackgroundSyncService {
   async forceSync(): Promise<void> {
     if (!this.networkStatus.isFullyOnline()) {
       this.toast.warning('Cannot sync while offline');
+      return;
+    }
+    if (this.getQueueStats().isSyncing) {
       return;
     }
 
