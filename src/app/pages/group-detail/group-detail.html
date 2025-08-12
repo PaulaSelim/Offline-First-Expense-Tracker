@@ -1,12 +1,10 @@
 @if (isLoading()) {
   <app-loading-spinner />
-} @else if (selectedGroup()) {
+} @else {
   <div class="container py-4">
     <app-group-header />
     <app-sync-status />
     <app-view-expenses (viewExpenses)="onViewExpenses()" />
     <app-group-member-list />
   </div>
-} @else {
-  <app-unauthorized />
 }

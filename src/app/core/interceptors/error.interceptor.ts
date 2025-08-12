@@ -5,13 +5,16 @@ import {
   HttpHandlerFn,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, throwError } from 'rxjs';
+
 export const ErrorInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
   next: HttpHandlerFn,
 ) => {
   const toast: ToastrService = inject(ToastrService);
+  const router: Router = inject(Router);
 
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
@@ -31,6 +34,7 @@ export const ErrorInterceptor: HttpInterceptorFn = (
             break;
           case 403:
             errorMessage = 'Access denied';
+            router.navigate(['/unauthorized']);
             break;
           case 404:
             errorMessage = 'Resource not found';

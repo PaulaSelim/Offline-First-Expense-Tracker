@@ -97,4 +97,13 @@ export const routes: Routes = [
     title: 'Edit Expense',
     canActivate: [authGuard],
   },
+  {
+    path: ROUTE_PATHS.UNAUTHORIZED,
+    loadComponent: () =>
+      import('./pages/unauthorized/unauthorized').then(
+        (m: typeof import('./pages/unauthorized/unauthorized')) =>
+          m.Unauthorized,
+      ),
+    title: 'Unauthorized',
+  },
 ];
