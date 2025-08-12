@@ -8,6 +8,7 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, throwError } from 'rxjs';
+import { ROUTER_LINKS } from '../../../routes.model';
 
 export const ErrorInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -34,7 +35,7 @@ export const ErrorInterceptor: HttpInterceptorFn = (
             break;
           case 403:
             errorMessage = 'Access denied';
-            router.navigate(['/unauthorized']);
+            router.navigate([ROUTER_LINKS.UNAUTHORIZED]);
             break;
           case 404:
             errorMessage = 'Resource not found';
