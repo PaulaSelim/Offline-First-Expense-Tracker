@@ -20,6 +20,7 @@ import { Unauthorized } from '../unauthorized/unauthorized';
 import { GroupHeader } from './components/group-header/group-header';
 import { GroupMemberList } from './components/group-member-list/group-member-list';
 import { ViewExpenses } from './components/view-expenses/view-expenses';
+import { ROUTER_LINKS } from '../../../routes.model';
 
 @Component({
   selector: 'app-group-detail',
@@ -64,11 +65,14 @@ export class GroupDetail implements OnInit {
     this.isLoading.set(true);
 
     this.groupProvider.fetchGroupById(this.groupId);
-
     this.groupProvider.fetchGroupMembers(this.groupId);
 
     setTimeout(() => {
       this.isLoading.set(false);
+
+      if (!this.selectedGroup()) {
+        this.router.navigate([ROUTER_LINKS.UNAUTHORIZED]);
+      }
     }, 500);
   }
 

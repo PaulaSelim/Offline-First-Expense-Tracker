@@ -13,6 +13,7 @@ import {
   FormBuilder,
   FormGroup,
   ReactiveFormsModule,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -71,7 +72,10 @@ export class ExpenseEdit implements OnInit {
     category: ['', [Validators.required]],
     date: ['', [Validators.required]],
     is_payer_included: [true, [Validators.required]],
-    participants_id: [[], [Validators.required, Validators.minLength(1)]],
+    participants_id: [
+      [],
+      [this.atLeastOneParticipant, Validators.minLength(1)],
+    ],
   });
 
   get titleControl(): AbstractControl | null {
@@ -143,7 +147,15 @@ export class ExpenseEdit implements OnInit {
   }
 
   onSubmit(): void {
-    if (this.expenseForm.valid && !this.isSubmitting()) {
+    const participants: string[] = (
+      this.expenseForm.value.participants_id || []
+    ).filter((id: string) => typeof id === 'string' && !!id);
+
+    if (
+      this.expenseForm.valid &&
+      participants.length > 0 &&
+      !this.isSubmitting()
+    ) {
       this.isSubmitting.set(true);
 
       const formData: ExpenseUpdateRequest = {
@@ -153,7 +165,7 @@ export class ExpenseEdit implements OnInit {
         category: this.expenseForm.value.category,
         date: this.expenseForm.value.date,
         is_payer_included: this.expenseForm.value.is_payer_included,
-        participants_id: this.expenseForm.value.participants_id,
+        participants_id: participants,
       };
 
       this.expenseFacade.updateExpense(this.groupId, this.expenseId, formData);
@@ -164,6 +176,7 @@ export class ExpenseEdit implements OnInit {
       }, 1000);
     } else {
       this.markFormGroupTouched();
+      this.expenseForm.markAllAsTouched();
     }
   }
 
@@ -204,6 +217,11 @@ export class ExpenseEdit implements OnInit {
     return participants.includes(memberId);
   }
 
+  atLeastOneParticipant(control: AbstractControl): ValidationErrors | null {
+    return Array.isArray(control.value) && control.value.length > 0
+      ? null
+      : { atLeastOneParticipant: true };
+  }
   private markFormGroupTouched(): void {
     Object.keys(this.expenseForm.controls).forEach((key: string) => {
       const control: AbstractControl | null = this.expenseForm.get(key);

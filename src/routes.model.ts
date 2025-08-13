@@ -11,6 +11,7 @@ export enum ROUTE_PATHS {
   EXPENSE_ADD = 'groups/:id/expenses/add',
   EXPENSE_DETAIL = 'groups/:id/expenses/:expenseId',
   EXPENSE_EDIT = 'groups/:id/expenses/:expenseId/edit',
+  UNAUTHORIZED = 'unauthorized',
 }
 
 export enum ROUTER_LINKS {
@@ -26,4 +27,5 @@ export enum ROUTER_LINKS {
   EXPENSE_ADD = `/${ROUTE_PATHS.EXPENSE_ADD}`,
   EXPENSE_DETAIL = `/${ROUTE_PATHS.EXPENSE_DETAIL}`,
   EXPENSE_EDIT = `/${ROUTE_PATHS.EXPENSE_EDIT}`,
+  UNAUTHORIZED = `/${ROUTE_PATHS.UNAUTHORIZED}`,
 }

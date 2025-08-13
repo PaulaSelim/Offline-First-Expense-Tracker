@@ -74,15 +74,13 @@ export class AuthFacade {
           setTimeout(() => {
             this.router.navigate([ROUTER_LINKS.DASHBOARD]);
           }, 100);
-        } catch (error) {
-          console.error('Error saving user to database:', error);
-          this.toast.success('Login successful!');
-          this.router.navigate([ROUTER_LINKS.DASHBOARD]);
+        } catch (error: unknown) {
+          this.toast.error(
+            'Login Failed!',
+            error instanceof Error ? error.message : String(error),
+          );
+          this.router.navigate([ROUTER_LINKS.LOGIN]);
         }
-      },
-      error: () => {
-        setAuthError('Invalid username or password');
-        this.toast.error('Login failed. Please try again.');
       },
       complete: () => setAuthLoading(false),
     });
@@ -98,10 +96,6 @@ export class AuthFacade {
 
         this.toast.success('Registration successful!');
         this.router.navigate([ROUTER_LINKS.LOGIN]);
-      },
-      error: () => {
-        setAuthError('Registration failed. Try again.');
-        this.toast.error('Registration failed. Try again.');
       },
       complete: () => setAuthLoading(false),
     });
@@ -268,10 +262,6 @@ export class AuthFacade {
               this.toast.warning('No offline profile data available');
               resolve(false);
             }
-          },
-          error: () => {
-            this.toast.error('Failed to load cached profile');
-            resolve(false);
           },
         });
     });

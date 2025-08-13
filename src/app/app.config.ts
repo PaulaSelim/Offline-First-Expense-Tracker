@@ -4,12 +4,12 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-
 import { routes } from './app.routes';
 import { AuthInterceptor } from './core/interceptors/auth.interceptor';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideToastr } from 'ngx-toastr';
 import { provideAnimations } from '@angular/platform-browser/animations';
+import { ErrorInterceptor } from './core/interceptors/error/error.interceptor';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
@@ -23,6 +23,7 @@ export const appConfig: ApplicationConfig = {
       closeButton: true,
       progressBar: true,
     }),
-    provideHttpClient(withInterceptors([AuthInterceptor])),
+
+    provideHttpClient(withInterceptors([AuthInterceptor, ErrorInterceptor])),
   ],
 };
