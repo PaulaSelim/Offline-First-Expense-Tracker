@@ -1,5 +1,6 @@
 import { signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   Group,
@@ -58,6 +59,7 @@ describe('GroupDetail', () => {
     await TestBed.configureTestingModule({
       imports: [GroupDetail],
       providers: [
+        provideZonelessChangeDetection(),
         { provide: GroupFacade, useValue: mockGroupFacade },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },

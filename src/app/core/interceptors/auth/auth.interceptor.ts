@@ -6,8 +6,8 @@ import {
 } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { catchError, switchMap, throwError, from } from 'rxjs';
-import { TokenState } from '../services/token.state';
-import { AuthFacade } from '../../service/auth/auth.facade';
+import { TokenState } from '../../services/token-state/token.state';
+import { AuthFacade } from '../../../service/auth/auth.facade';
 
 export const AuthInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,

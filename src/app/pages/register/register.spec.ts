@@ -3,6 +3,15 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { provideRouter } from '@angular/router';
 import { Register } from './register';
+import { provideHttpClient } from '@angular/common/http';
+import { provideToastr } from 'ngx-toastr';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { AuthFacade } from '../../service/auth/auth.facade';
+
+// Mock AuthFacade
+class MockAuthFacade {
+  register = jasmine.createSpy('register');
+}
 
 describe('Register', () => {
   let component: Register;
@@ -11,7 +20,14 @@ describe('Register', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Register, ReactiveFormsModule],
-      providers: [provideZonelessChangeDetection(), provideRouter([])],
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        provideHttpClient(),
+        provideToastr(),
+        provideNoopAnimations(),
+        { provide: AuthFacade, useClass: MockAuthFacade },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Register);

@@ -1,10 +1,17 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { provideHttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideToastr } from 'ngx-toastr';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+
 import { ExpenseFacade } from '../../service/expense/expense.facade';
 import { GroupFacade } from '../../service/group/group.facade';
+import { AuthFacade } from '../../service/auth/auth.facade';
 import {
   Group,
   GroupMember,
@@ -12,7 +19,16 @@ import {
 } from '../../core/api/groupApi/groupApi.model';
 import { ExpenseRequest } from '../../core/api/expenseApi/expenseApi.model';
 import { ExpenseCreate } from './expense-create';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { CardShared } from '../../shared/card-shared/card-shared';
+import { ExpenseCreateForm } from './expense-create-form/expense-create-form';
+
+// RxDB Service Mocks
+import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
+import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
+import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
+import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
+import { BackgroundSyncService } from '../../core/services/background-sync/background-sync.service';
 describe('ExpenseCreate', () => {
   let component: ExpenseCreate;
   let fixture: ComponentFixture<ExpenseCreate>;
@@ -20,6 +36,7 @@ describe('ExpenseCreate', () => {
   let mockActivatedRoute: jasmine.SpyObj<ActivatedRoute>;
   let mockExpenseFacade: jasmine.SpyObj<ExpenseFacade>;
   let mockGroupFacade: jasmine.SpyObj<GroupFacade>;
+  let mockAuthFacade: jasmine.SpyObj<AuthFacade>;
 
   const mockGroupMembers: GroupMember[] = [
     {
@@ -65,20 +82,100 @@ describe('ExpenseCreate', () => {
       'fetchGroupById',
       'fetchGroupMembers',
     ]);
+    mockAuthFacade = jasmine.createSpyObj('AuthFacade', [
+      'getCurrentUser',
+      'getCurrentUserId',
+      'isAuthenticated',
+    ]);
 
     // Setup facade return values
     mockGroupFacade.getSelectedGroup.and.returnValue(signal(mockGroup));
     mockGroupFacade.getGroupMembers.and.returnValue(signal(mockGroupMembers));
+    mockAuthFacade.getCurrentUserId.and.returnValue(signal('user1'));
+    mockAuthFacade.isAuthenticated.and.returnValue(signal(true));
+
+    // Mock RxDB Services
+    const mockRxdbService = jasmine.createSpyObj('RxdbService', ['database']);
+    const mockGroupDBState = jasmine.createSpyObj('GroupDBState', [
+      'getAllGroups$',
+      'getGroupById$',
+      'addOrUpdateGroup$',
+      'removeGroupById$',
+      'removeAllGroups$',
+    ]);
+    const mockExpensesDBState = jasmine.createSpyObj('ExpensesDBState', [
+      'getAllExpenses$',
+      'addOrUpdateExpense$',
+      'removeExpenseById$',
+      'removeAllExpenses$',
+    ]);
+    const mockSyncQueueDBState = jasmine.createSpyObj('SyncQueueDBState', [
+      'getAll$',
+      'addToQueue$',
+      'clearQueue$',
+    ]);
+    const mockUserDBState = jasmine.createSpyObj('UserDBState', [
+      'getUser$',
+      'addOrUpdateUser$',
+      'removeUser$',
+    ]);
+    const mockBackgroundSyncService = jasmine.createSpyObj(
+      'BackgroundSyncService',
+      ['startSync', 'forceSync', 'getQueueStats'],
+    );
+
+    // Setup return values for RxDB mocks
+    mockGroupDBState.getAllGroups$.and.returnValue(of([]));
+    mockGroupDBState.getGroupById$.and.returnValue(of(mockGroup));
+    mockGroupDBState.addOrUpdateGroup$.and.returnValue(of(undefined));
+    mockGroupDBState.removeGroupById$.and.returnValue(of(undefined));
+    mockGroupDBState.removeAllGroups$.and.returnValue(of(undefined));
+    mockExpensesDBState.getAllExpenses$.and.returnValue(of([]));
+    mockExpensesDBState.addOrUpdateExpense$.and.returnValue(of(undefined));
+    mockExpensesDBState.removeExpenseById$.and.returnValue(of(undefined));
+    mockExpensesDBState.removeAllExpenses$.and.returnValue(of(undefined));
+    mockSyncQueueDBState.getAll$.and.returnValue(of([]));
+    mockSyncQueueDBState.addToQueue$.and.returnValue(of(undefined));
+    mockSyncQueueDBState.clearQueue$.and.returnValue(of(undefined));
+    mockUserDBState.getUser$.and.returnValue(of(null));
+    mockUserDBState.addOrUpdateUser$.and.returnValue(of(undefined));
+    mockUserDBState.removeUser$.and.returnValue(of(undefined));
+    mockBackgroundSyncService.getQueueStats.and.returnValue({
+      isSyncing: false,
+      progress: 0,
+      totalItems: 0,
+      failedItems: 0,
+      hasFailedItems: false,
+    });
 
     await TestBed.configureTestingModule({
-      imports: [ExpenseCreate, ReactiveFormsModule],
+      imports: [
+        ExpenseCreate,
+        CardShared,
+        ExpenseCreateForm,
+        ReactiveFormsModule,
+      ],
       providers: [
         FormBuilder,
         provideZonelessChangeDetection(),
+        provideHttpClient(),
+        provideToastr(),
+        provideNoopAnimations(),
+        provideRouter([
+          { path: 'dashboard', component: class {} },
+          { path: 'groups/:id/expenses', component: class {} },
+        ]),
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: ExpenseFacade, useValue: mockExpenseFacade },
         { provide: GroupFacade, useValue: mockGroupFacade },
+        { provide: AuthFacade, useValue: mockAuthFacade },
+        { provide: RxdbService, useValue: mockRxdbService },
+        { provide: GroupDBState, useValue: mockGroupDBState },
+        { provide: ExpensesDBState, useValue: mockExpensesDBState },
+        { provide: SyncQueueDBState, useValue: mockSyncQueueDBState },
+        { provide: UserDBState, useValue: mockUserDBState },
+        { provide: BackgroundSyncService, useValue: mockBackgroundSyncService },
       ],
     }).compileComponents();
 
@@ -461,11 +558,11 @@ describe('ExpenseCreate', () => {
   describe('categories', () => {
     it('should have predefined categories', () => {
       expect(component.categories).toEqual([
-        { id: 'Food', name: 'Food & Dining', icon: '🍽️' },
-        { id: 'Transport', name: 'Transportation', icon: '🚗' },
-        { id: 'Entertainment', name: 'Entertainment', icon: '🎬' },
-        { id: 'Utilities', name: 'Utilities', icon: '💡' },
-        { id: 'other', name: 'Other', icon: '📦' },
+        { id: 'Food', name: 'Food & Dining', icon: 'bi bi-egg-fried' },
+        { id: 'Transport', name: 'Transportation', icon: 'bi bi-truck' },
+        { id: 'Entertainment', name: 'Entertainment', icon: 'bi bi-film' },
+        { id: 'Utilities', name: 'Utilities', icon: 'bi bi-lightbulb-fill' },
+        { id: 'other', name: 'Other', icon: 'bi bi-box' },
       ]);
     });
   });

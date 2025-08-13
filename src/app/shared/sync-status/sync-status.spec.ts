@@ -3,7 +3,7 @@ import { Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { SyncFacade } from '../../service/sync/sync.facade';
 import { SyncStatusComponent } from './sync-status';
-
+import { provideZonelessChangeDetection } from '@angular/core';
 // Mock signals
 function createSignal<T>(value: T): Signal<T> {
   return (() => value) as Signal<T>;
@@ -30,7 +30,10 @@ describe('SyncStatusComponent', () => {
 
     await TestBed.configureTestingModule({
       imports: [SyncStatusComponent, DecimalPipe, NgClass],
-      providers: [{ provide: SyncFacade, useValue: mockSyncFacade }],
+      providers: [
+        { provide: SyncFacade, useValue: mockSyncFacade },
+        provideZonelessChangeDetection(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(SyncStatusComponent);

@@ -6,8 +6,8 @@ import {
   map,
   startWith,
 } from 'rxjs/operators';
-import { HealthStatus } from '../api/syncApi/syncApi.model';
-import { SyncApiService } from '../api/syncApi/syncApi.service';
+import { HealthStatus } from '../../api/syncApi/syncApi.model';
+import { SyncApiService } from '../../api/syncApi/syncApi.service';
 import {
   isBackendReachable,
   isFullyOnline,
@@ -16,7 +16,7 @@ import {
   setIsBackendReachable,
   setIsOnline,
   setLastConnectionCheck,
-} from '../state-management/network-status.state';
+} from '../../state-management/network-status.state';
 
 @Injectable({
   providedIn: 'root',

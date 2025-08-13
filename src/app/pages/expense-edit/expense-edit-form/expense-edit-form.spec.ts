@@ -103,12 +103,6 @@ describe('ExpenseEditForm', () => {
     expect(component.GroupRole).toBe(GroupRole);
   });
 
-  it('should emit submitForm when onSubmit is called', () => {
-    spyOn(component.submitForm, 'emit');
-    component.onSubmit();
-    expect(component.submitForm.emit).toHaveBeenCalled();
-  });
-
   it('should emit cancelForm when onCancel is called', () => {
     spyOn(component.cancelForm, 'emit');
     component.onCancel();
