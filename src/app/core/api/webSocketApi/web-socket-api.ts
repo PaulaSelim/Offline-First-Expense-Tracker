@@ -4,6 +4,8 @@ import { webSocketEnvironment } from '../../../../environments/environment';
 import { TokenState } from '../../services/token.state';
 import {
   WebSocketCloseCode,
+  WebSocketCloseReason,
+  WebSocketResponse,
   WebSocketSyncRequest,
   WebSocketSyncResponse,
 } from './webSocket.model';
@@ -23,13 +25,13 @@ export class WebSocketApi {
         const accessToken: string | null = this.tokenState.getAccessToken();
 
         if (!accessToken) {
-          observer.error(new Error('No access token available'));
+          observer.error(new Error(WebSocketCloseReason.MISSING_TOKEN));
           return;
         }
 
         const wsUrl: string | undefined = webSocketEnvironment.webSocketUrl;
         if (!wsUrl) {
-          observer.error(new Error('WebSocket URL not configured'));
+          observer.error(new Error(WebSocketCloseReason.INVALID_URL));
           return;
         }
 
@@ -48,7 +50,10 @@ export class WebSocketApi {
             const response: WebSocketSyncResponse = JSON.parse(event.data);
             observer.next(response);
 
-            if (response.type === 'completed' || response.type === 'error') {
+            if (
+              response.type === WebSocketResponse.COMPLETED ||
+              response.type === WebSocketResponse.ERROR
+            ) {
               isCompleted = true;
               observer.complete();
             }
@@ -65,7 +70,7 @@ export class WebSocketApi {
         this.socket.onerror = (): void => {
           if (!isCompleted) {
             isCompleted = true;
-            observer.error(new Error('WebSocket connection error'));
+            observer.error(new Error(WebSocketCloseReason.CONNECTION_ERROR));
           }
         };
 
@@ -74,16 +79,16 @@ export class WebSocketApi {
 
           switch (event.code) {
             case WebSocketCloseCode.MissingToken:
-              observer.error(new Error('Missing authentication token'));
+              observer.error(new Error(WebSocketCloseReason.MISSING_TOKEN));
               break;
             case WebSocketCloseCode.InvalidToken:
-              observer.error(new Error('Invalid authentication token'));
+              observer.error(new Error(WebSocketCloseReason.INVALID_TOKEN));
               break;
             case WebSocketCloseCode.InvalidPayload:
-              observer.error(new Error('Invalid request payload'));
+              observer.error(new Error(WebSocketCloseReason.INVALID_PAYLOAD));
               break;
             case WebSocketCloseCode.InternalError:
-              observer.error(new Error('Internal server error'));
+              observer.error(new Error(WebSocketCloseReason.INTERNAL_ERROR));
               break;
             case WebSocketCloseCode.NormalClosure:
               observer.complete();

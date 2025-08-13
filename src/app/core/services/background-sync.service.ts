@@ -18,9 +18,13 @@ import { NetworkStatusService } from './network-status.service';
 
 import { WebSocketApi } from '../api/webSocketApi/web-socket-api';
 import {
+  EntityType,
+  WebSocketCloseReason,
+  WebSocketResponse,
   WebSocketSyncChange,
   WebSocketSyncRequest,
   WebSocketSyncResponse,
+  WebSocketSyncType,
 } from '../api/webSocketApi/webSocket.model';
 import {
   failedItems,
@@ -71,7 +75,7 @@ export class BackgroundSyncService {
         this.networkStatus.isBackendReachable();
       if (isFullyOnline && !isSyncing()) {
         if (this.syncTimeout) clearTimeout(this.syncTimeout);
-        this.syncTimeout = setTimeout(() => this.startSync(), 4000);
+        this.syncTimeout = setTimeout(() => this.startSync(), 1000);
       }
     });
   }
@@ -113,7 +117,7 @@ export class BackgroundSyncService {
         try {
           console.error('Attempting WebSocket sync...');
           await this.syncViaWebSocket(pendingItems);
-          console.error('WebSocket sync completed successfully');
+          console.error(WebSocketCloseReason.SUCCESS_SYNC);
         } catch (wsError) {
           console.error(
             'WebSocket sync failed, falling back to HTTP:',
@@ -148,8 +152,8 @@ export class BackgroundSyncService {
     console.error('Starting WebSocket sync with items:', pendingItems);
     const changes: WebSocketSyncChange[] = pendingItems.map(
       (item: SyncQueueDocument) => ({
-        type: item.action as 'create' | 'update' | 'delete',
-        entity: item.entityType as 'expense' | 'group',
+        type: item.action as WebSocketSyncType,
+        entity: item.entityType as EntityType,
         entity_id: item.entityId,
         data: item.action !== 'delete' ? item.data : undefined,
         timestamp: item.timestamp,
@@ -165,11 +169,11 @@ export class BackgroundSyncService {
         this.webSocketApi.bulkSyncWebSocket(request).subscribe({
           next: (response: WebSocketSyncResponse) => {
             switch (response.type) {
-              case 'ack':
+              case WebSocketResponse.ACK:
                 console.error('Sync operation started:', response.operation_id);
                 break;
 
-              case 'completed':
+              case WebSocketResponse.COMPLETED:
                 console.error('Sync completed:', response.operation_id);
                 this.processWebSocketNotifications(
                   response.notifications,
@@ -179,7 +183,7 @@ export class BackgroundSyncService {
                 setSyncProgress(processedCount);
                 break;
 
-              case 'error':
+              case WebSocketResponse.ERROR:
                 console.error('Sync error:', response.error);
                 throw new Error(response.error);
             }
@@ -208,9 +212,9 @@ export class BackgroundSyncService {
       try {
         await this.processSyncItem(item);
 
-        if (item.entityType === 'expense') {
+        if (item.entityType === EntityType.EXPENSE) {
           await this.syncExpense(item);
-        } else if (item.entityType === 'group') {
+        } else if (item.entityType === EntityType.GROUP) {
           await this.syncGroup(item);
         }
 

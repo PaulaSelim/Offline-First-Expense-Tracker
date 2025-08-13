@@ -4,6 +4,7 @@ import { TokenState } from '../../services/token.state';
 import { WebSocketApi } from './web-socket-api';
 import {
   WebSocketCloseCode,
+  WebSocketResponse,
   WebSocketSyncAckResponse,
   WebSocketSyncCompletedResponse,
   WebSocketSyncRequest,
@@ -73,13 +74,13 @@ describe('WebSocketApi', () => {
     );
     const req: WebSocketSyncRequest = { changes: [] };
     const ack: WebSocketSyncAckResponse = {
-      type: 'ack',
+      type: WebSocketResponse.ACK,
       operation_id: '1',
       status: 'started',
       created_at: 'now',
     };
     const completed: WebSocketSyncCompletedResponse = {
-      type: 'completed',
+      type: WebSocketResponse.COMPLETED,
       operation_id: '1',
       status: 'completed',
       completed_at: 'now',
