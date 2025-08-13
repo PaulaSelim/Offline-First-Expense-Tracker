@@ -8,7 +8,8 @@ import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { ToastrService } from 'ngx-toastr';
 import { catchError, throwError } from 'rxjs';
-import { ROUTER_LINKS } from '../../../routes.model';
+import { ROUTER_LINKS } from '../../../../routes.model';
+import { ERROR_MESSAGES } from './error.messages';
 
 export const ErrorInterceptor: HttpInterceptorFn = (
   req: HttpRequest<unknown>,
@@ -28,29 +29,29 @@ export const ErrorInterceptor: HttpInterceptorFn = (
       } else {
         switch (error.status) {
           case 400:
-            errorMessage = 'Bad Request: Invalid request data';
+            errorMessage = ERROR_MESSAGES.BAD_REQUEST;
             break;
           case 401:
-            errorMessage = 'Authentication required or invalid';
+            errorMessage = ERROR_MESSAGES.UNAUTHORIZED;
             break;
           case 403:
-            errorMessage = 'Access denied';
+            errorMessage = ERROR_MESSAGES.FORBIDDEN;
             router.navigate([ROUTER_LINKS.UNAUTHORIZED]);
             break;
           case 404:
-            errorMessage = 'Resource not found';
+            errorMessage = ERROR_MESSAGES.NOT_FOUND;
             break;
           case 409:
-            errorMessage = 'Resource conflict (e.g., duplicate email)';
+            errorMessage = ERROR_MESSAGES.CONFLICT;
             break;
           case 422:
-            errorMessage = 'Validation errors';
+            errorMessage = ERROR_MESSAGES.VALIDATION_ERROR;
             break;
           case 500:
-            errorMessage = 'Internal Server Error';
+            errorMessage = ERROR_MESSAGES.SERVER_ERROR;
             break;
           default:
-            errorMessage = 'An unexpected error occurred';
+            errorMessage = ERROR_MESSAGES.UNEXPECTED;
         }
       }
 
