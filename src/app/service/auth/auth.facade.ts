@@ -205,6 +205,13 @@ export class AuthFacade {
 
   isTokenValid(): Promise<boolean> {
     return new Promise((resolve: (value: boolean) => void) => {
+      const token: string | null = this.tokenState.getAccessToken();
+
+      if (!token) {
+        resolve(false);
+        return;
+      }
+
       this.syncApi.ping().subscribe({
         next: (status: HealthStatus) => {
           switch (status) {
@@ -228,23 +235,15 @@ export class AuthFacade {
 
             case HealthStatus.Dead:
               this.loadProfileFromCache()
-                .then((success: boolean) => {
-                  resolve(success);
-                })
-                .catch(() => {
-                  resolve(false);
-                });
+                .then(resolve)
+                .catch(() => resolve(false));
               break;
           }
         },
         error: () => {
           this.loadProfileFromCache()
-            .then((success: boolean) => {
-              resolve(success);
-            })
-            .catch(() => {
-              resolve(false);
-            });
+            .then(resolve)
+            .catch(() => resolve(false));
         },
       });
     });
