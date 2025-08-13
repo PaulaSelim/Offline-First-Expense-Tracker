@@ -51,10 +51,10 @@ export class NetworkStatusService {
         distinctUntilChanged(),
         debounceTime(100),
       )
-      .subscribe((isOnline: boolean) => {
-        setIsOnline(isOnline);
+      .subscribe((isOnlineStatus: boolean) => {
+        setIsOnline(isOnlineStatus);
 
-        if (isOnline) {
+        if (isOnlineStatus) {
           this.checkBackendHealth();
         } else {
           setIsBackendReachable(false);
@@ -64,14 +64,14 @@ export class NetworkStatusService {
 
   private startPeriodicCheck(): void {
     this.checkInterval = setInterval(() => {
-      if (isOnline()) {
+      if (this.isOnline()) {
         this.checkBackendHealth();
       }
     }, 30000);
   }
 
   async checkBackendHealth(): Promise<boolean> {
-    if (!isOnline()) {
+    if (!this.isOnline()) {
       setIsBackendReachable(false);
       return false;
     }

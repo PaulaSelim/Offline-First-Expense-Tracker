@@ -1,5 +1,7 @@
 export interface Environment {
   production: boolean;
-  apiUrl: string;
+  apiUrl?: string;
   port?: number;
+  webSocketUrl?: string;
+  webSocketPort?: number;
 }
