@@ -34,6 +34,7 @@ import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expen
 import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { AuthFacade } from '../auth/auth.facade';
 import { SyncFacade } from '../sync/sync.facade';
+import { SyncQueueDocument } from '../../core/state-management/RxDB/sync-queue/sync-queue.schema';
 
 export interface ExpenseDocument extends Expense {
   pendingSync?: boolean;
@@ -93,21 +94,40 @@ export class ExpenseFacade {
         .getExpenses(groupId)
         .pipe(take(1))
         .subscribe({
-          next: (res: ExpenseListResponse) => {
+          next: async (res: ExpenseListResponse) => {
             const serverExpenses: Expense[] = res.data.expenses;
 
-            serverExpenses.forEach((expense: Expense) => {
-              try {
-                this.localDB
-                  .addOrUpdateExpense$(expense)
-                  .pipe(take(1))
-                  .subscribe();
-              } catch (error: unknown) {
-                this.handleExpenseError(error, 'Failed to sync expenses');
-              }
-            });
+            const hasPendingOperations: boolean =
+              await this.hasPendingSyncOperations();
 
-            setExpenses(serverExpenses);
+            if (hasPendingOperations) {
+              serverExpenses.forEach((expense: Expense) => {
+                try {
+                  this.localDB
+                    .addOrUpdateExpense$(expense)
+                    .pipe(take(1))
+                    .subscribe();
+                } catch (error: unknown) {
+                  this.handleExpenseError(error, 'Failed to sync expenses');
+                }
+              });
+
+              this.toast.info('Server data received, local changes preserved');
+            } else {
+              serverExpenses.forEach((expense: Expense) => {
+                try {
+                  this.localDB
+                    .addOrUpdateExpense$(expense)
+                    .pipe(take(1))
+                    .subscribe();
+                } catch (error: unknown) {
+                  this.handleExpenseError(error, 'Failed to sync expenses');
+                }
+              });
+
+              setExpenses(serverExpenses);
+            }
+
             setExpensePagination(res.data.pagination);
             setExpenseLoading(false);
             addFetchedGroup(groupId);
@@ -236,37 +256,8 @@ export class ExpenseFacade {
       return;
     }
 
-    this.api
-      .createExpense(data, groupId)
-      .pipe(take(1))
-      .subscribe({
-        next: (res: ExpenseResponse) => {
-          const serverExpense: Expense = res.data.expense;
-
-          this.localDB
-            .removeExpenseById$(localExpenseId)
-            .pipe(take(1))
-            .subscribe(() => {
-              this.localDB
-                .addOrUpdateExpense$(serverExpense)
-                .pipe(take(1))
-                .subscribe(() => {
-                  this.syncQueueDB
-                    .removeFromQueue$(localExpenseId)
-                    .pipe(take(1))
-                    .subscribe();
-
-                  this.fetchExpenses(groupId);
-                  this.toast.success('Expense synced with server!');
-                  setExpenseLoading(false);
-                });
-            });
-        },
-        error: () => {
-          this.toast.warning('Expense saved locally, will sync when online');
-          setExpenseLoading(false);
-        },
-      });
+    this.toast.info('Expense queued for sync');
+    setExpenseLoading(false);
   }
 
   async updateExpense(
@@ -333,35 +324,8 @@ export class ExpenseFacade {
               return;
             }
 
-            this.api
-              .updateExpense(groupId, expenseId, data)
-              .pipe(take(1))
-              .subscribe({
-                next: (res: ExpenseResponse) => {
-                  const serverExpense: Expense = res.data.expense;
-                  setSelectedExpense(serverExpense);
-
-                  this.localDB
-                    .addOrUpdateExpense$(serverExpense)
-                    .pipe(take(1))
-                    .subscribe(() => {
-                      this.syncQueueDB
-                        .removeFromQueue$(expenseId)
-                        .pipe(take(1))
-                        .subscribe();
-
-                      this.fetchExpenses(groupId);
-                      this.toast.success('Expense synced with server!');
-                      setExpenseLoading(false);
-                    });
-                },
-                error: () => {
-                  this.toast.warning(
-                    'Expense updated locally, will sync when online',
-                  );
-                  setExpenseLoading(false);
-                },
-              });
+            this.toast.info('Changes queued for sync');
+            setExpenseLoading(false);
           },
           error: () => {
             this.toast.error('Failed to update expense locally');
@@ -398,26 +362,8 @@ export class ExpenseFacade {
               return;
             }
 
-            this.api
-              .deleteExpense(groupId, expenseId)
-              .pipe(take(1))
-              .subscribe({
-                next: () => {
-                  this.syncQueueDB
-                    .removeFromQueue$(expenseId)
-                    .pipe(take(1))
-                    .subscribe();
-
-                  this.toast.success('Expense deletion synced with server!');
-                  setExpenseLoading(false);
-                },
-                error: () => {
-                  this.toast.warning(
-                    'Expense deleted locally, will sync deletion when online',
-                  );
-                  setExpenseLoading(false);
-                },
-              });
+            this.toast.info('Deletion queued for sync');
+            setExpenseLoading(false);
           },
           error: () => {
             this.toast.error('Failed to delete expense locally');
@@ -571,5 +517,17 @@ export class ExpenseFacade {
           });
       },
     );
+  }
+
+  private async hasPendingSyncOperations(): Promise<boolean> {
+    return new Promise<boolean>((resolve: (value: boolean) => void) => {
+      this.syncQueueDB
+        .getPendingItems$()
+        .pipe(take(1))
+        .subscribe({
+          next: (items: SyncQueueDocument[]) => resolve(items.length > 0),
+          error: () => resolve(false),
+        });
+    });
   }
 }

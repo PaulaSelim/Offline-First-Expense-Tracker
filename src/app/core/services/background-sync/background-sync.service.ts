@@ -19,7 +19,6 @@ import { NetworkStatusService } from '../network-status/network-status.service';
 import { WebSocketApi } from '../../api/webSocketApi/web-socket-api';
 import {
   EntityType,
-  WebSocketCloseReason,
   WebSocketResponse,
   WebSocketSyncChange,
   WebSocketSyncRequest,
@@ -115,9 +114,7 @@ export class BackgroundSyncService {
 
       if (this.useWebSocketSync) {
         try {
-          console.error('Attempting WebSocket sync...');
           await this.syncViaWebSocket(pendingItems);
-          console.error(WebSocketCloseReason.SUCCESS_SYNC);
         } catch (wsError) {
           console.error(
             'WebSocket sync failed, falling back to HTTP:',
@@ -149,15 +146,30 @@ export class BackgroundSyncService {
   private async syncViaWebSocket(
     pendingItems: SyncQueueDocument[],
   ): Promise<void> {
-    console.error('Starting WebSocket sync with items:', pendingItems);
+    for (const item of pendingItems) {
+      await this.processSyncItem(item);
+    }
+
     const changes: WebSocketSyncChange[] = pendingItems.map(
-      (item: SyncQueueDocument) => ({
-        type: item.action as WebSocketSyncType,
-        entity: item.entityType as EntityType,
-        entity_id: item.entityId,
-        data: item.action !== 'delete' ? item.data : undefined,
-        timestamp: item.timestamp,
-      }),
+      (item: SyncQueueDocument) => {
+        const change: WebSocketSyncChange = {
+          type: item.action as WebSocketSyncType,
+          entity: item.entityType as EntityType,
+          entity_id: item.entityId,
+          data: item.action !== 'delete' ? item.data : undefined,
+          timestamp: item.timestamp,
+        };
+
+        if (item.entityType === EntityType.EXPENSE && item.groupId) {
+          if (change.data && typeof change.data === 'object') {
+            (change.data as { group_id: string }).group_id = item.groupId;
+          } else if (item.action !== 'delete') {
+            change.data = { group_id: item.groupId };
+          }
+        }
+
+        return change;
+      },
     );
 
     const request: WebSocketSyncRequest = { changes };
@@ -165,31 +177,41 @@ export class BackgroundSyncService {
     return new Promise(
       (resolve: () => void, reject: (reason?: unknown) => void) => {
         let processedCount: number = 0;
+        let hasCompleted: boolean = false;
 
         this.webSocketApi.bulkSyncWebSocket(request).subscribe({
           next: (response: WebSocketSyncResponse) => {
             switch (response.type) {
               case WebSocketResponse.ACK:
-                console.error('Sync operation started:', response.operation_id);
+                this.toast.info(
+                  `Sync operation started: ${response.operation_id}`,
+                );
                 break;
 
               case WebSocketResponse.COMPLETED:
-                console.error('Sync completed:', response.operation_id);
-                this.processWebSocketNotifications(
-                  response.notifications,
-                  pendingItems,
-                );
-                processedCount = pendingItems.length;
-                setSyncProgress(processedCount);
+                if (!hasCompleted) {
+                  hasCompleted = true;
+                  this.toast.success(
+                    `Sync completed: ${response.operation_id}`,
+                  );
+                  this.processWebSocketNotifications(
+                    response.notifications,
+                    pendingItems,
+                  );
+                  processedCount = pendingItems.length;
+                  setSyncProgress(processedCount);
+                }
                 break;
 
               case WebSocketResponse.ERROR:
-                console.error('Sync error:', response.error);
+                this.toast.error(`Sync error: ${response.error}`);
+                this.resetProcessingFlags(pendingItems);
                 throw new Error(response.error);
             }
           },
           error: (error: unknown) => {
-            console.error('WebSocket sync failed:', error);
+            this.toast.error(`WebSocket sync failed: ${error}`);
+            this.resetProcessingFlags(pendingItems);
             reject(error);
           },
           complete: () => {
@@ -203,8 +225,22 @@ export class BackgroundSyncService {
     );
   }
 
+  private async resetProcessingFlags(
+    items: SyncQueueDocument[],
+  ): Promise<void> {
+    for (const item of items) {
+      await new Promise<void>((resolve: (value: void) => void) => {
+        this.syncQueueDB
+          .updateRetryCount$(item.id)
+          .pipe(take(1))
+          .subscribe({
+            next: () => resolve(),
+            error: () => resolve(),
+          });
+      });
+    }
+  }
   private async syncViaHttp(pendingItems: SyncQueueDocument[]): Promise<void> {
-    console.error('Starting HTTP sync with items:', pendingItems);
     let processedCount: number = 0;
     let failedCount: number = 0;
 
