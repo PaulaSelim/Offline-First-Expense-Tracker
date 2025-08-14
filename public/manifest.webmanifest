@@ -1,6 +1,6 @@
 {
-  "name": "ToDoApp",
-  "short_name": "ToDoApp",
+  "name": "ExpenseTrackingApp",
+  "short_name": "ExpenseTrackingApp",
   "display": "standalone",
   "scope": "./",
   "start_url": "./",
