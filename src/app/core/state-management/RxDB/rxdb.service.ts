@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
-import { createRxDatabase, RxDatabase } from 'rxdb';
+import { addRxPlugin, createRxDatabase, RxDatabase } from 'rxdb';
 import { getRxStorageLocalstorage } from 'rxdb/plugins/storage-localstorage';
+import { RxDBUpdatePlugin } from 'rxdb/plugins/update';
 import { expensesSchema } from './expenses/expenses.schema';
 import { groupsSchema } from './group/group.schema';
 import { syncQueueSchema } from './sync-queue/sync-queue.schema';
@@ -29,7 +30,7 @@ export class RxdbService {
       expenses: { schema: expensesSchema },
       syncQueue: { schema: syncQueueSchema },
     });
-
+    addRxPlugin(RxDBUpdatePlugin);
     return db;
   }
 
