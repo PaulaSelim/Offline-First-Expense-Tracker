@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "ToDoApp": {
+    "ExpenseTrackingApp": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -65,10 +65,10 @@
           "builder": "@angular/build:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "ToDoApp:build:production"
+              "buildTarget": "ExpenseTrackingApp:build:production"
             },
             "development": {
-              "buildTarget": "ToDoApp:build:development"
+              "buildTarget": "ExpenseTrackingApp:build:development"
             }
           },
           "defaultConfiguration": "development"

@@ -1,5 +1,5 @@
 {
-  "name": "to-do-app",
+  "name": "expense-tracking-app",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
