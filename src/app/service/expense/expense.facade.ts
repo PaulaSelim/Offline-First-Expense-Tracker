@@ -236,37 +236,8 @@ export class ExpenseFacade {
       return;
     }
 
-    this.api
-      .createExpense(data, groupId)
-      .pipe(take(1))
-      .subscribe({
-        next: (res: ExpenseResponse) => {
-          const serverExpense: Expense = res.data.expense;
-
-          this.localDB
-            .removeExpenseById$(localExpenseId)
-            .pipe(take(1))
-            .subscribe(() => {
-              this.localDB
-                .addOrUpdateExpense$(serverExpense)
-                .pipe(take(1))
-                .subscribe(() => {
-                  this.syncQueueDB
-                    .removeFromQueue$(localExpenseId)
-                    .pipe(take(1))
-                    .subscribe();
-
-                  this.fetchExpenses(groupId);
-                  this.toast.success('Expense synced with server!');
-                  setExpenseLoading(false);
-                });
-            });
-        },
-        error: () => {
-          this.toast.warning('Expense saved locally, will sync when online');
-          setExpenseLoading(false);
-        },
-      });
+    this.toast.info('Expense queued for sync');
+    setExpenseLoading(false);
   }
 
   async updateExpense(
@@ -333,35 +304,8 @@ export class ExpenseFacade {
               return;
             }
 
-            this.api
-              .updateExpense(groupId, expenseId, data)
-              .pipe(take(1))
-              .subscribe({
-                next: (res: ExpenseResponse) => {
-                  const serverExpense: Expense = res.data.expense;
-                  setSelectedExpense(serverExpense);
-
-                  this.localDB
-                    .addOrUpdateExpense$(serverExpense)
-                    .pipe(take(1))
-                    .subscribe(() => {
-                      this.syncQueueDB
-                        .removeFromQueue$(expenseId)
-                        .pipe(take(1))
-                        .subscribe();
-
-                      this.fetchExpenses(groupId);
-                      this.toast.success('Expense synced with server!');
-                      setExpenseLoading(false);
-                    });
-                },
-                error: () => {
-                  this.toast.warning(
-                    'Expense updated locally, will sync when online',
-                  );
-                  setExpenseLoading(false);
-                },
-              });
+            this.toast.info('Changes queued for sync');
+            setExpenseLoading(false);
           },
           error: () => {
             this.toast.error('Failed to update expense locally');
@@ -398,26 +342,8 @@ export class ExpenseFacade {
               return;
             }
 
-            this.api
-              .deleteExpense(groupId, expenseId)
-              .pipe(take(1))
-              .subscribe({
-                next: () => {
-                  this.syncQueueDB
-                    .removeFromQueue$(expenseId)
-                    .pipe(take(1))
-                    .subscribe();
-
-                  this.toast.success('Expense deletion synced with server!');
-                  setExpenseLoading(false);
-                },
-                error: () => {
-                  this.toast.warning(
-                    'Expense deleted locally, will sync deletion when online',
-                  );
-                  setExpenseLoading(false);
-                },
-              });
+            this.toast.info('Deletion queued for sync');
+            setExpenseLoading(false);
           },
           error: () => {
             this.toast.error('Failed to delete expense locally');

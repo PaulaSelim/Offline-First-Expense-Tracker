@@ -146,6 +146,10 @@ export class BackgroundSyncService {
   private async syncViaWebSocket(
     pendingItems: SyncQueueDocument[],
   ): Promise<void> {
+    for (const item of pendingItems) {
+      await this.processSyncItem(item);
+    }
+
     const changes: WebSocketSyncChange[] = pendingItems.map(
       (item: SyncQueueDocument) => {
         const change: WebSocketSyncChange = {
@@ -173,6 +177,7 @@ export class BackgroundSyncService {
     return new Promise(
       (resolve: () => void, reject: (reason?: unknown) => void) => {
         let processedCount: number = 0;
+        let hasCompleted: boolean = false;
 
         this.webSocketApi.bulkSyncWebSocket(request).subscribe({
           next: (response: WebSocketSyncResponse) => {
@@ -184,22 +189,29 @@ export class BackgroundSyncService {
                 break;
 
               case WebSocketResponse.COMPLETED:
-                this.toast.success(`Sync completed: ${response.operation_id}`);
-                this.processWebSocketNotifications(
-                  response.notifications,
-                  pendingItems,
-                );
-                processedCount = pendingItems.length;
-                setSyncProgress(processedCount);
+                if (!hasCompleted) {
+                  hasCompleted = true;
+                  this.toast.success(
+                    `Sync completed: ${response.operation_id}`,
+                  );
+                  this.processWebSocketNotifications(
+                    response.notifications,
+                    pendingItems,
+                  );
+                  processedCount = pendingItems.length;
+                  setSyncProgress(processedCount);
+                }
                 break;
 
               case WebSocketResponse.ERROR:
                 this.toast.error(`Sync error: ${response.error}`);
+                this.resetProcessingFlags(pendingItems);
                 throw new Error(response.error);
             }
           },
           error: (error: unknown) => {
             this.toast.error(`WebSocket sync failed: ${error}`);
+            this.resetProcessingFlags(pendingItems);
             reject(error);
           },
           complete: () => {
@@ -213,6 +225,21 @@ export class BackgroundSyncService {
     );
   }
 
+  private async resetProcessingFlags(
+    items: SyncQueueDocument[],
+  ): Promise<void> {
+    for (const item of items) {
+      await new Promise<void>((resolve: (value: void) => void) => {
+        this.syncQueueDB
+          .updateRetryCount$(item.id)
+          .pipe(take(1))
+          .subscribe({
+            next: () => resolve(),
+            error: () => resolve(),
+          });
+      });
+    }
+  }
   private async syncViaHttp(pendingItems: SyncQueueDocument[]): Promise<void> {
     let processedCount: number = 0;
     let failedCount: number = 0;
