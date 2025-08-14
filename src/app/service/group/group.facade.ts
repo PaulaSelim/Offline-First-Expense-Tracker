@@ -75,25 +75,32 @@ export class GroupFacade {
   }
 
   async getLocalGroups(): Promise<Group[]> {
-    return await Promise.race([
-      new Promise<Group[]>(
-        (
-          resolve: (value: Group[]) => void,
-          reject: (reason?: unknown) => void,
-        ) => {
-          this.groupDB
-            .getAllGroups$()
-            .pipe(take(1))
-            .subscribe({
-              next: (groups: Group[]) => resolve(groups || []),
-              error: (error: unknown) => reject(error),
-            });
-        },
-      ),
-      new Promise<Group[]>((_: unknown, reject: (reason?: unknown) => void) =>
-        setTimeout(() => reject(new Error('Database timeout')), 2000),
-      ),
-    ]);
+    try {
+      return await Promise.race([
+        new Promise<Group[]>(
+          (
+            resolve: (value: Group[]) => void,
+            reject: (reason?: unknown) => void,
+          ) => {
+            setTimeout(() => {
+              this.groupDB
+                .getAllGroups$()
+                .pipe(take(1))
+                .subscribe({
+                  next: (groups: Group[]) => resolve(groups || []),
+                  error: (error: unknown) => reject(error),
+                });
+            }, 10);
+          },
+        ),
+        new Promise<Group[]>((_: unknown, reject: (reason?: unknown) => void) =>
+          setTimeout(() => reject(new Error('Database timeout')), 500),
+        ),
+      ]);
+    } catch (error) {
+      console.error('Failed to load local groups:', error);
+      return [];
+    }
   }
 
   async fetchGroups(): Promise<void> {
