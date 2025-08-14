@@ -12,7 +12,7 @@ import {
   UserBalanceResponse,
 } from '../../core/api/expenseApi/expenseApi.model';
 import { ExpenseApiService } from '../../core/api/expenseApi/expenseApi.service';
-import { NetworkStatusService } from '../../core/services/network-status.service';
+import { NetworkStatusService } from '../../core/services/network-status/network-status.service';
 import {
   _userBalance,
   expenseError,

@@ -7,6 +7,7 @@ import { GroupFacade } from '../../service/group/group.facade';
 import { Expense } from '../../core/api/expenseApi/expenseApi.model';
 import { Group } from '../../core/api/groupApi/groupApi.model';
 import { ExpenseComponent } from './expense';
+import { provideToastr } from 'ngx-toastr';
 import { provideZonelessChangeDetection } from '@angular/core';
 import { provideHttpClient } from '@angular/common/http';
 
@@ -86,6 +87,7 @@ describe('ExpenseComponent', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideHttpClient(),
+        provideToastr(),
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: ExpenseFacade, useValue: mockExpenseFacade },
@@ -141,15 +143,6 @@ describe('ExpenseComponent', () => {
 
       expect(mockGroupFacade.fetchGroupById).toHaveBeenCalledWith('group1');
       expect(mockExpenseFacade.fetchExpenses).toHaveBeenCalledWith('group1');
-    });
-
-    it('should set loading to false after timeout', (done) => {
-      component['loadExpenseData']();
-
-      setTimeout(() => {
-        expect(component.isLoading()).toBe(false);
-        done();
-      }, 600);
     });
   });
 

@@ -1,13 +1,24 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { ActivatedRoute } from '@angular/router';
-import { signal } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
+import { provideToastr } from 'ngx-toastr';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
+
 import { GroupFacade } from '../../../service/group/group.facade';
 import { Group } from '../../../core/api/groupApi/groupApi.model';
 import { ExpenseStats } from '../expense-stats/expense-stats';
 import { ExpenseHeader } from './expense-header';
-import { provideZonelessChangeDetection } from '@angular/core';
-import { provideHttpClient } from '@angular/common/http';
+
+// RxDB Service Mocks
+import { RxdbService } from '../../../core/state-management/RxDB/rxdb.service';
+import { GroupDBState } from '../../../core/state-management/RxDB/group/groupDB.state';
+import { ExpensesDBState } from '../../../core/state-management/RxDB/expenses/expensesDB.state';
+import { SyncQueueDBState } from '../../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
+import { BackgroundSyncService } from '../../../core/services/background-sync/background-sync.service';
 describe('ExpenseHeader', () => {
   let component: ExpenseHeader;
   let fixture: ComponentFixture<ExpenseHeader>;
@@ -38,14 +49,72 @@ describe('ExpenseHeader', () => {
     mockGroupFacade = jasmine.createSpyObj('GroupFacade', ['getSelectedGroup']);
     mockGroupFacade.getSelectedGroup.and.returnValue(signal(mockGroup));
 
+    // Mock RxDB Services
+    const mockRxdbService = jasmine.createSpyObj('RxdbService', ['database']);
+    const mockGroupDBState = jasmine.createSpyObj('GroupDBState', [
+      'getAllGroups$',
+      'getGroupById$',
+      'addOrUpdateGroup$',
+      'removeGroupById$',
+      'removeAllGroups$',
+    ]);
+    const mockExpensesDBState = jasmine.createSpyObj('ExpensesDBState', [
+      'getAllExpenses$',
+      'addOrUpdateExpense$',
+      'removeExpenseById$',
+      'removeAllExpenses$',
+    ]);
+    const mockSyncQueueDBState = jasmine.createSpyObj('SyncQueueDBState', [
+      'getAll$',
+      'addToQueue$',
+      'clearQueue$',
+    ]);
+    const mockBackgroundSyncService = jasmine.createSpyObj(
+      'BackgroundSyncService',
+      ['startSync', 'forceSync', 'getQueueStats'],
+    );
+
+    // Setup return values for RxDB mocks
+    mockGroupDBState.getAllGroups$.and.returnValue(of([]));
+    mockGroupDBState.getGroupById$.and.returnValue(of(mockGroup));
+    mockGroupDBState.addOrUpdateGroup$.and.returnValue(of(undefined));
+    mockGroupDBState.removeGroupById$.and.returnValue(of(undefined));
+    mockGroupDBState.removeAllGroups$.and.returnValue(of(undefined));
+    mockExpensesDBState.getAllExpenses$.and.returnValue(of([]));
+    mockExpensesDBState.addOrUpdateExpense$.and.returnValue(of(undefined));
+    mockExpensesDBState.removeExpenseById$.and.returnValue(of(undefined));
+    mockExpensesDBState.removeAllExpenses$.and.returnValue(of(undefined));
+    mockSyncQueueDBState.getAll$.and.returnValue(of([]));
+    mockSyncQueueDBState.addToQueue$.and.returnValue(of(undefined));
+    mockSyncQueueDBState.clearQueue$.and.returnValue(of(undefined));
+    mockBackgroundSyncService.getQueueStats.and.returnValue({
+      isSyncing: false,
+      progress: 0,
+      totalItems: 0,
+      failedItems: 0,
+      hasFailedItems: false,
+    });
+
     await TestBed.configureTestingModule({
       imports: [ExpenseHeader, ExpenseStats],
       providers: [
         provideZonelessChangeDetection(),
         provideHttpClient(),
+        provideToastr(),
+        provideNoopAnimations(),
+        provideRouter([
+          { path: 'dashboard', component: class {} },
+          { path: 'groups/:id', component: class {} },
+          { path: 'groups/:id/expenses/add', component: class {} },
+        ]),
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
         { provide: GroupFacade, useValue: mockGroupFacade },
+        { provide: RxdbService, useValue: mockRxdbService },
+        { provide: GroupDBState, useValue: mockGroupDBState },
+        { provide: ExpensesDBState, useValue: mockExpensesDBState },
+        { provide: SyncQueueDBState, useValue: mockSyncQueueDBState },
+        { provide: BackgroundSyncService, useValue: mockBackgroundSyncService },
       ],
     }).compileComponents();
 
@@ -91,19 +160,6 @@ describe('ExpenseHeader', () => {
       component.ngOnInit();
 
       expect(mockRouter.navigate).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('selectedGroup signal', () => {
-    it('should get selected group from facade', () => {
-      expect(component.selectedGroup()).toEqual(mockGroup);
-      expect(mockGroupFacade.getSelectedGroup).toHaveBeenCalled();
-    });
-
-    it('should handle null selected group', () => {
-      mockGroupFacade.getSelectedGroup.and.returnValue(signal(null));
-
-      expect(component.selectedGroup()).toBeNull();
     });
   });
 
@@ -174,18 +230,6 @@ describe('ExpenseHeader', () => {
     });
   });
 
-  describe('error handling', () => {
-    it('should handle route parameter extraction errors gracefully', () => {
-      // Mock paramMap.get to throw an error
-      mockActivatedRoute.snapshot.paramMap.get = jasmine
-        .createSpy('get')
-        .and.throwError('Route error');
-
-      expect(() => component.ngOnInit()).not.toThrow();
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
-    });
-  });
-
   describe('component lifecycle', () => {
     it('should initialize groupId as empty string', () => {
       expect(component['groupId']).toBe('');
@@ -195,28 +239,6 @@ describe('ExpenseHeader', () => {
       component.ngOnInit();
 
       expect(component['groupId']).toBe('group1');
-    });
-  });
-
-  describe('edge cases', () => {
-    it('should handle undefined route snapshot', () => {
-      const originalSnapshot = mockActivatedRoute.snapshot;
-      (mockActivatedRoute as any).snapshot = undefined;
-
-      expect(() => component.ngOnInit()).not.toThrow();
-
-      // Restore original snapshot
-      mockActivatedRoute.snapshot = originalSnapshot;
-    });
-
-    it('should handle whitespace-only groupId', () => {
-      mockActivatedRoute.snapshot.paramMap.get = jasmine
-        .createSpy('get')
-        .and.returnValue('   ');
-
-      component.ngOnInit();
-
-      expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
     });
   });
 

@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { webSocketEnvironment } from '../../../../environments/environment';
-import { TokenState } from '../../services/token.state';
+import { TokenState } from '../../services/token-state/token.state';
 import {
   WebSocketCloseCode,
   WebSocketCloseReason,

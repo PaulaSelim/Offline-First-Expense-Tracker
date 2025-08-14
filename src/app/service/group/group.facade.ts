@@ -13,7 +13,7 @@ import {
   GroupRole,
 } from '../../core/api/groupApi/groupApi.model';
 import { GroupApiService } from '../../core/api/groupApi/groupApi.service';
-import { NetworkStatusService } from '../../core/services/network-status.service';
+import { NetworkStatusService } from '../../core/services/network-status/network-status.service';
 import {
   groupError,
   groupLoading,
@@ -29,7 +29,7 @@ import {
 } from '../../core/state-management/group.state';
 import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
 
-import { BackgroundSyncService } from '../../core/services/background-sync.service';
+import { BackgroundSyncService } from '../../core/services/background-sync/background-sync.service';
 import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
 import { AuthFacade } from '../auth/auth.facade';
 import { SyncFacade } from '../sync/sync.facade';

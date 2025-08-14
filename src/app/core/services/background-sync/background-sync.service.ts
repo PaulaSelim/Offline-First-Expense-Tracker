@@ -5,18 +5,18 @@ import {
   Expense,
   ExpenseRequest,
   ExpenseUpdateRequest,
-} from '../api/expenseApi/expenseApi.model';
-import { ExpenseApiService } from '../api/expenseApi/expenseApi.service';
-import { Group, GroupRequest } from '../api/groupApi/groupApi.model';
-import { GroupApiService } from '../api/groupApi/groupApi.service';
-import { ExpensesDBState } from '../state-management/RxDB/expenses/expensesDB.state';
-import { GroupDBState } from '../state-management/RxDB/group/groupDB.state';
+} from '../../api/expenseApi/expenseApi.model';
+import { ExpenseApiService } from '../../api/expenseApi/expenseApi.service';
+import { Group, GroupRequest } from '../../api/groupApi/groupApi.model';
+import { GroupApiService } from '../../api/groupApi/groupApi.service';
+import { ExpensesDBState } from '../../state-management/RxDB/expenses/expensesDB.state';
+import { GroupDBState } from '../../state-management/RxDB/group/groupDB.state';
 
-import { SyncQueueDocument } from '../state-management/RxDB/sync-queue/sync-queue.schema';
-import { SyncQueueDBState } from '../state-management/RxDB/sync-queue/sync-queueDB.state';
-import { NetworkStatusService } from './network-status.service';
+import { SyncQueueDocument } from '../../state-management/RxDB/sync-queue/sync-queue.schema';
+import { SyncQueueDBState } from '../../state-management/RxDB/sync-queue/sync-queueDB.state';
+import { NetworkStatusService } from '../network-status/network-status.service';
 
-import { WebSocketApi } from '../api/webSocketApi/web-socket-api';
+import { WebSocketApi } from '../../api/webSocketApi/web-socket-api';
 import {
   EntityType,
   WebSocketCloseReason,
@@ -25,7 +25,7 @@ import {
   WebSocketSyncRequest,
   WebSocketSyncResponse,
   WebSocketSyncType,
-} from '../api/webSocketApi/webSocket.model';
+} from '../../api/webSocketApi/webSocket.model';
 import {
   failedItems,
   hasFailedItems,
@@ -36,7 +36,7 @@ import {
   setTotalItems,
   syncProgress,
   totalItems,
-} from '../state-management/sync.state';
+} from '../../state-management/sync.state';
 
 @Injectable({
   providedIn: 'root',

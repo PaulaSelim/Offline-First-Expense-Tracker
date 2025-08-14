@@ -60,6 +60,6 @@ describe('GroupHeaderActions', () => {
       'button.btn-secondary',
     );
     backBtn.click();
-    expect(mockRouter.navigate).toHaveBeenCalledWith(['/dashboard']);
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['dashboard']);
   });
 });

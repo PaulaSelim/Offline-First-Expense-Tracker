@@ -1,14 +1,17 @@
 import { TestBed } from '@angular/core/testing';
 import { webSocketEnvironment } from '../../../../environments/environment';
-import { TokenState } from '../../services/token.state';
+import { TokenState } from '../../services/token-state/token.state';
 import { WebSocketApi } from './web-socket-api';
 import {
   WebSocketCloseCode,
+  WebSocketCloseReason,
   WebSocketResponse,
+  WebSocketStatus,
   WebSocketSyncAckResponse,
   WebSocketSyncCompletedResponse,
   WebSocketSyncRequest,
 } from './webSocket.model';
+import { provideZonelessChangeDetection } from '@angular/core';
 
 describe('WebSocketApi', () => {
   let service: WebSocketApi;
@@ -21,11 +24,11 @@ describe('WebSocketApi', () => {
     TestBed.configureTestingModule({
       providers: [
         WebSocketApi,
+        provideZonelessChangeDetection(),
         { provide: TokenState, useValue: tokenStateMock },
       ],
     });
     service = TestBed.inject(WebSocketApi);
-    // Mock global WebSocket
     const g: any = globalThis as any;
     originalWebSocket = g.WebSocket;
     wsInstance = {
@@ -48,7 +51,7 @@ describe('WebSocketApi', () => {
     tokenStateMock.getAccessToken.and.returnValue(null);
     service.bulkSyncWebSocket({ changes: [] }).subscribe({
       error: (err) => {
-        expect(err.message).toContain('No access token');
+        expect(err.message).toContain(WebSocketCloseReason.MISSING_TOKEN);
         done();
       },
     });
@@ -61,7 +64,7 @@ describe('WebSocketApi', () => {
     );
     service.bulkSyncWebSocket({ changes: [] }).subscribe({
       error: (err) => {
-        expect(err.message).toContain('WebSocket URL not configured');
+        expect(err.message).toContain(WebSocketCloseReason.INVALID_URL);
         done();
       },
     });
@@ -76,13 +79,13 @@ describe('WebSocketApi', () => {
     const ack: WebSocketSyncAckResponse = {
       type: WebSocketResponse.ACK,
       operation_id: '1',
-      status: 'started',
+      status: WebSocketStatus.STARTED,
       created_at: 'now',
     };
     const completed: WebSocketSyncCompletedResponse = {
       type: WebSocketResponse.COMPLETED,
       operation_id: '1',
-      status: 'completed',
+      status: WebSocketStatus.COMPLETED,
       completed_at: 'now',
       notifications: [],
     };
@@ -123,7 +126,7 @@ describe('WebSocketApi', () => {
     );
     service.bulkSyncWebSocket({ changes: [] }).subscribe({
       error: (err) => {
-        expect(err.message).toContain('WebSocket connection error');
+        expect(err.message).toContain(WebSocketCloseReason.CONNECTION_ERROR);
         done();
       },
     });
@@ -138,17 +141,20 @@ describe('WebSocketApi', () => {
     const closeCodes = [
       {
         code: WebSocketCloseCode.MissingToken,
-        msg: 'Missing authentication token',
+        msg: WebSocketCloseReason.MISSING_TOKEN,
       },
       {
         code: WebSocketCloseCode.InvalidToken,
-        msg: 'Invalid authentication token',
+        msg: WebSocketCloseReason.INVALID_TOKEN,
       },
       {
         code: WebSocketCloseCode.InvalidPayload,
-        msg: 'Invalid request payload',
+        msg: WebSocketCloseReason.INVALID_PAYLOAD,
       },
-      { code: WebSocketCloseCode.InternalError, msg: 'Internal server error' },
+      {
+        code: WebSocketCloseCode.InternalError,
+        msg: WebSocketCloseReason.INTERNAL_ERROR,
+      },
       { code: 9999, msg: 'WebSocket closed with code: 9999' },
     ];
     let tested = 0;

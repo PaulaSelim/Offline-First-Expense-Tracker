@@ -13,7 +13,7 @@ import {
 import { AuthApiService } from '../../core/api/authApi/authApi.service';
 import { HealthStatus } from '../../core/api/syncApi/syncApi.model';
 import { SyncApiService } from '../../core/api/syncApi/syncApi.service';
-import { TokenState } from '../../core/services/token.state';
+import { TokenState } from '../../core/services/token-state/token.state';
 import {
   authData,
   authError,

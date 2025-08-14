@@ -6,7 +6,7 @@ import {
   Signal,
   WritableSignal,
 } from '@angular/core';
-import { LocalStorage } from './local-storage';
+import { LocalStorage } from '../local-storage/local-storage';
 
 @Injectable({ providedIn: 'root' })
 export class TokenState {

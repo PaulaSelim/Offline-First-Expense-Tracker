@@ -1,25 +1,83 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { By } from '@angular/platform-browser';
 import { Login } from './login';
+import { provideHttpClient } from '@angular/common/http';
+import { provideToastr } from 'ngx-toastr';
+import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { LoginForm } from './login-form/login-form';
+import { AuthFacade } from '../../service/auth/auth.facade';
+import { RxdbService } from '../../core/state-management/RxDB/rxdb.service';
+import { UserDBState } from '../../core/state-management/RxDB/user/userDB.state';
+import { GroupDBState } from '../../core/state-management/RxDB/group/groupDB.state';
+import { ExpensesDBState } from '../../core/state-management/RxDB/expenses/expensesDB.state';
+import { SyncQueueDBState } from '../../core/state-management/RxDB/sync-queue/sync-queueDB.state';
+import { of } from 'rxjs';
 
 describe('Login', () => {
   let component: Login;
   let fixture: ComponentFixture<Login>;
+  let mockAuthFacade: jasmine.SpyObj<AuthFacade>;
 
   beforeEach(async () => {
+    // Mock AuthFacade
+    mockAuthFacade = jasmine.createSpyObj('AuthFacade', [
+      'isTokenValid',
+      'login',
+    ]);
+    mockAuthFacade.isTokenValid.and.returnValue(Promise.resolve(false));
+
+    // Mock RxDB Services
+    const mockRxdbService = jasmine.createSpyObj('RxdbService', ['database']);
+    const mockUserDBState = jasmine.createSpyObj('UserDBState', [
+      'getUser$',
+      'addOrUpdateUser$',
+      'removeUser$',
+    ]);
+    const mockGroupDBState = jasmine.createSpyObj('GroupDBState', [
+      'getAllGroups$',
+      'removeAllGroups$',
+    ]);
+    const mockExpensesDBState = jasmine.createSpyObj('ExpensesDBState', [
+      'getAllExpenses$',
+      'removeAllExpenses$',
+    ]);
+    const mockSyncQueueDBState = jasmine.createSpyObj('SyncQueueDBState', [
+      'getAll$',
+      'clearQueue$',
+    ]);
+
+    mockUserDBState.getUser$.and.returnValue(of(null));
+    mockUserDBState.addOrUpdateUser$.and.returnValue(of(undefined));
+    mockUserDBState.removeUser$.and.returnValue(of(undefined));
+    mockGroupDBState.getAllGroups$.and.returnValue(of([]));
+    mockGroupDBState.removeAllGroups$.and.returnValue(of(undefined));
+    mockExpensesDBState.getAllExpenses$.and.returnValue(of([]));
+    mockExpensesDBState.removeAllExpenses$.and.returnValue(of(undefined));
+    mockSyncQueueDBState.getAll$.and.returnValue(of([]));
+    mockSyncQueueDBState.clearQueue$.and.returnValue(of(undefined));
+
     await TestBed.configureTestingModule({
       imports: [Login, LoginForm, ReactiveFormsModule],
       providers: [
         provideZonelessChangeDetection(),
+        provideToastr(),
+        provideNoopAnimations(),
+        provideHttpClient(),
         provideRouter([
           { path: 'register', component: class {} },
           { path: 'forgot-password', component: class {} },
           { path: 'home', component: class {} },
+          { path: 'dashboard', component: class {} },
         ]),
+        { provide: AuthFacade, useValue: mockAuthFacade },
+        { provide: RxdbService, useValue: mockRxdbService },
+        { provide: UserDBState, useValue: mockUserDBState },
+        { provide: GroupDBState, useValue: mockGroupDBState },
+        { provide: ExpensesDBState, useValue: mockExpensesDBState },
+        { provide: SyncQueueDBState, useValue: mockSyncQueueDBState },
       ],
     }).compileComponents();
 
@@ -187,17 +245,6 @@ describe('Login', () => {
   });
 
   describe('onSubmit method', () => {
-    it('should reset form when form is valid', () => {
-      component.form.get('email')?.setValue('test@example.com');
-      component.form.get('password')?.setValue('Password123');
-
-      spyOn(component.form, 'reset');
-
-      component.onSubmit();
-
-      expect(component.form.reset).toHaveBeenCalled();
-    });
-
     it('should not reset form when form is invalid', () => {
       spyOn(component.form, 'reset');
 
@@ -265,6 +312,42 @@ describe('Login', () => {
 
       emailControl?.setValue('test@example.com');
       expect(component.form.valid).toBeTruthy();
+    });
+  });
+
+  describe('AuthFacade Integration', () => {
+    it('should call AuthFacade.isTokenValid on ngOnInit', () => {
+      expect(mockAuthFacade.isTokenValid).toHaveBeenCalled();
+    });
+
+    it('should not navigate to dashboard when token is invalid', async () => {
+      mockAuthFacade.isTokenValid.and.returnValue(Promise.resolve(false));
+
+      component.ngOnInit();
+      await fixture.whenStable();
+
+      expect(mockAuthFacade.isTokenValid).toHaveBeenCalled();
+    });
+
+    it('should call AuthFacade.login with form data on valid form submission', () => {
+      component.form.get('email')?.setValue('test@example.com');
+      component.form.get('password')?.setValue('Password123');
+
+      component.onSubmit();
+
+      expect(mockAuthFacade.login).toHaveBeenCalledWith({
+        email: 'test@example.com',
+        password: 'Password123',
+      });
+    });
+
+    it('should not call AuthFacade.login on invalid form submission', () => {
+      component.form.get('email')?.setValue('invalid-email');
+      component.form.get('password')?.setValue('');
+
+      component.onSubmit();
+
+      expect(mockAuthFacade.login).not.toHaveBeenCalled();
     });
   });
 
