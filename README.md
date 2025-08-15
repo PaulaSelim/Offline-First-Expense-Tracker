@@ -97,7 +97,7 @@ ng e2e         # Run end-to-end tests (if configured)
 * [x] **Assign Expenses to Specific Users** — Track shared expenses clearly.
 * [x] **Categories for Expenses** — Classify expenses for better reporting.
 * [x] **Offline First** — fully functional offline once the user successfully logs in.
-* [x] **Automatic Syncing** — Automatically syncs user data when back online.
+* [x] **Automatic Syncing** — Automatically syncs user data when back online using websocket.
 * [ ] **Data Export/Import** — Backup and restore your data.
 * [ ] **Push Notifications for Reminders** — Stay on top of upcoming expenses.
 * [ ] **Sign in with Google or Github** — signing in with other service providers accounts.
